@@ -74,6 +74,7 @@ html[data-theme="light"] {
 
 html {
     scroll-behavior: smooth;
+    overflow-x: hidden;
 }
 
 body {
@@ -744,6 +745,13 @@ section {
 .reveal-rotate.visible {
     opacity: 1;
     transform: none;
+}
+
+@media (max-width: 768px) {
+    .reveal-left,
+    .reveal-right {
+        transform: translateY(50px);
+    }
 }
 
 .stagger-1 { transition-delay: 0.1s; }
