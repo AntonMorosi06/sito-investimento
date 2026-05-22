@@ -1,0 +1,25 @@
+flowchart TD
+    A[User / Demo Operator] --> B[Dashboard Command Panel]
+    B --> C[Command: PING / STATUS / SET_MODE / STOP / RESET]
+    C --> D[Web Serial or Bridge Layer]
+    D --> E[ESP32 Master]
+    E --> F[Command Parser and Router]
+
+    F --> N1[NODE_01_LED_STATE]
+    F --> N2[NODE_02_PROXIMITY_SAFETY]
+    F --> N3[NODE_03_MAGNETIC_DOCKING]
+    F --> N4[NODE_04_MOTION_ACTUATOR]
+    F --> N5[NODE_05_TELEMETRY_SENSOR]
+    F --> N6[NODE_06_VISION_CAMERA]
+
+    N1 --> R[Node Response]
+    N2 --> R
+    N3 --> R
+    N4 --> R
+    N5 --> R
+    N6 --> R
+
+    R --> T[Telemetry Packet]
+    T --> U[Dashboard Panels / Terminal / Logs]
+    U --> V[Simulation State Update]
+    V --> W[Demo Output: video, screenshots, GitHub assets]

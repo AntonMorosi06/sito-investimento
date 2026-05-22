@@ -1,0 +1,17 @@
+flowchart TB
+    CS["Customer Segments\nStudents, makers, educators,\nprofessors, collaborators"]
+    VP["Value Proposition\nEvidence-based modular robotics\nlearning/prototyping ecosystem"]
+    CH["Channels\nGitHub, portfolio, demo video,\nprofessor outreach, workshops"]
+    CR["Customer Relationships\nEducation, transparency,\nissues, feedback, guided demos"]
+    RS["Revenue Streams\nFuture kits, workshops,\ncourse material, sponsorship"]
+    KR["Key Resources\nRepo, docs, dashboard,\nfirmware, validation tools, BOM"]
+    KA["Key Activities\nValidate ESP32, build docs,\nrecord demos, improve dashboard"]
+    KP["Key Partnerships\nProfessors, makerspaces,\nmentors, suppliers, incubators"]
+    CO["Cost Structure\nESP32 kit, tools, hosting,\n3D printing later, company costs later"]
+
+    KP --> KA --> VP --> CR --> CS
+    KR --> KA
+    VP --> CH --> CS
+    CS --> RS
+    KA --> CO
+    KR --> CO

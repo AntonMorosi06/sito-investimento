@@ -1,0 +1,23 @@
+flowchart TD
+    A[Preflight Check] --> B[Low Power First]
+    B --> C[Dashboard in SAFE or OFFLINE Mode]
+    C --> D[Connect Master ESP32]
+    D --> E[PING / STATUS / HEARTBEAT]
+    E --> F{Node Responds?}
+
+    F -->|Yes| G[Test One Module at a Time]
+    F -->|No| H[Mark OFFLINE and Block Critical Commands]
+
+    G --> I[Run Single Command]
+    I --> J[Observe LED / Sensor / Motion / Telemetry / Temperature]
+    J --> K{Error or Unsafe State?}
+
+    K -->|No| L[Log PASS and Continue]
+    K -->|Yes| M[STOP / SAFE_MODE / EMERGENCY]
+
+    H --> N[Dashboard Warning and Report]
+    M --> N
+    L --> O[Validation Report]
+    N --> O
+
+    O --> P[Ready for Demo Rehearsal]

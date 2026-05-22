@@ -1,0 +1,2195 @@
+<!DOCTYPE html>
+<html lang="it" data-theme="dark">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MicroBot ULTRA | Ecosistema Completo di Robotica Modulare</title>
+    <meta
+        name="description"
+        content="Sito investimento MicroBot: demo interattiva, dashboard operativa, documentazione tecnica e roadmap per un ecosistema di robotica modulare."
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap"
+        rel="stylesheet"
+    />
+
+<link rel="stylesheet" href="css/styles.css" />
+<link rel="stylesheet" href="css/face-auth.css" />
+<link rel="icon" href="assets/icons/microbot-investimento.svg" type="image/svg+xml" />
+</head>
+<body class="locked">
+
+    <div id="faceAuthGate" class="face-auth-gate">
+  <div class="app-shell">
+    <div class="noise"></div>
+    <div class="grid-bg"></div>
+
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-dot"></div>
+        <div class="brand-text">
+          <h1>MICROBOT FACE AUTH</h1>
+          <p>Facial Recognition Interface Module</p>
+        </div>
+      </div>
+
+      <div class="system-badges">
+        <div class="badge">VISION ACTIVE</div>
+        <div class="badge">LOCAL VERIFY</div>
+        <div class="badge">BIOMETRIC MODE</div>
+      </div>
+    </header>
+
+    <main class="dashboard">
+      <section class="viewer-panel glass">
+        <div class="panel-header">
+          <span class="panel-title">Live Camera Feed</span>
+<span class="panel-status" id="authCameraStatus">Offline</span>        </div>
+
+        <div class="viewer-frame">
+          <video id="video" autoplay muted playsinline></video>
+          <canvas id="overlay"></canvas>
+
+          <div class="enrollment-ring-wrap">
+            <svg id="enrollmentRing" class="enrollment-ring" viewBox="0 0 240 240" aria-hidden="true">
+              <circle class="enrollment-ring-bg" cx="120" cy="120" r="92"></circle>
+              <circle id="enrollmentRingProgress" class="enrollment-ring-progress" cx="120" cy="120" r="92"></circle>
+            </svg>
+          </div>
+
+          <div class="scanner-line"></div>
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+          <div class="reticle"></div>
+
+          <div class="viewer-overlay-text">
+            <div>FACE ANALYSIS</div>
+            <div id="trackingState">NO TARGET</div>
+          </div>
+
+          <div id="enrollmentGuide" class="enrollment-guide hidden">
+            <div class="enrollment-guide-label">FACE ENROLLMENT</div>
+            <div id="enrollmentInstruction" class="enrollment-instruction">LOOK STRAIGHT AHEAD</div>
+            <div id="enrollmentProgress" class="enrollment-progress">STEP 1 / 5</div>
+          </div>
+
+          <div id="authOverlay" class="auth-overlay hidden">
+            <div id="authOverlayText" class="auth-overlay-text">ACCESS GRANTED</div>
+          </div>
+        </div>
+
+        <div class="viewer-actions">
+          <button id="startBtn" class="btn btn-primary" type="button">Start Camera</button>
+          <button id="registerBtn" class="btn" type="button">Register Face</button>
+          <button id="verifyBtn" class="btn" type="button">Verify Identity</button>
+          <button id="demoAccessBtn" class="btn btn-primary demo-access-btn" type="button">Explore Investor Demo</button>
+          <button id="clearProfileBtn" class="btn" type="button">Clear Profile</button>
+        </div>
+      </section>
+
+      <aside class="side-panel">
+        <section class="info-card glass">
+          <div class="card-header">System Status</div>
+
+          <div class="status-grid">
+            <div class="status-box">
+              <span class="label">Detection</span>
+              <strong id="detectStatus">Offline</strong>
+            </div>
+
+            <div class="status-box">
+              <span class="label">Landmarks</span>
+              <strong id="landmarkStatus">Offline</strong>
+            </div>
+
+            <div class="status-box">
+              <span class="label">Identity</span>
+              <strong id="identityStatus">Unknown</strong>
+            </div>
+
+            <div class="status-box">
+              <span class="label">Confidence</span>
+              <strong id="confidenceValue">0%</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="info-card glass">
+          <div class="card-header">Recognition Metrics</div>
+
+          <div class="metric-block">
+            <div class="metric-row">
+              <span>Face Presence</span>
+              <div class="bar"><div id="presenceBar" class="bar-fill"></div></div>
+            </div>
+
+            <div class="metric-row">
+              <span>Match Quality</span>
+              <div class="bar"><div id="matchBar" class="bar-fill"></div></div>
+            </div>
+
+            <div class="metric-row">
+              <span>Tracking Stability</span>
+              <div class="bar"><div id="stabilityBar" class="bar-fill"></div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="info-card glass">
+          <div class="card-header">Event Log</div>
+          <div id="logPanel" class="log-panel">
+            <div class="log-line">System boot sequence initialized</div>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <section id="microbotDashboard" class="microbot-dashboard hidden">
+      <div class="dashboard-shell glass">
+        <div class="dashboard-topbar">
+          <div>
+            <h2>MICROBOT CONTROL PANEL</h2>
+            <p>Protected system area unlocked by biometric verification</p>
+          </div>
+          <div class="dashboard-status-pill" id="dashboardAccessStatus">
+            ACCESS LOCKED
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="dashboard-card">
+            <span class="dashboard-card-label">Swarm Control</span>
+            <h3>Node Synchronization</h3>
+            <p id="swarmStatusText">Swarm system currently offline.</p>
+            <button id="enableSwarmBtn" class="dashboard-btn" type="button">Enable Swarm</button>
+          </div>
+
+          <div class="dashboard-card">
+            <span class="dashboard-card-label">Telemetry</span>
+            <h3>Live Status Stream</h3>
+            <p id="telemetryStatusText">Telemetry stream inactive.</p>
+            <button id="startTelemetryBtn" class="dashboard-btn" type="button">Start Telemetry</button>
+          </div>
+
+          <div class="dashboard-card">
+            <span class="dashboard-card-label">Authentication</span>
+            <h3>Biometric Session</h3>
+            <p id="biometricSessionText">No active verified session.</p>
+          </div>
+
+          <div class="dashboard-card">
+            <span class="dashboard-card-label">Controller Link</span>
+            <h3>Remote Interface</h3>
+            <p id="controllerLinkText">Controller link not established.</p>
+            <button id="linkControllerBtn" class="dashboard-btn" type="button">Link Controller</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-dot" id="cursorDot"></div>
+    <div class="grain"></div>
+    <div class="scan-line"></div>
+
+    <div class="preloader" id="preloader">
+        <div class="preloader-logo">
+            <div class="preloader-ring"></div>
+            <div class="preloader-ring"></div>
+            <div class="preloader-ring"></div>
+            <div class="preloader-ring"></div>
+            <div class="preloader-core"></div>
+            <div class="preloader-particles">
+                <div class="preloader-particle" style="top: 20%; left: 10%; --tx: 30px; --ty: -20px;"></div>
+                <div class="preloader-particle" style="top: 80%; left: 20%; --tx: -20px; --ty: 25px; animation-delay: 0.3s;"></div>
+                <div class="preloader-particle" style="top: 30%; left: 85%; --tx: 25px; --ty: 15px; animation-delay: 0.6s;"></div>
+                <div class="preloader-particle" style="top: 70%; left: 75%; --tx: -15px; --ty: -30px; animation-delay: 0.9s;"></div>
+                <div class="preloader-particle" style="top: 50%; left: 5%; --tx: 40px; --ty: 10px; animation-delay: 1.2s;"></div>
+                <div class="preloader-particle" style="top: 15%; left: 60%; --tx: -10px; --ty: 35px; animation-delay: 1.5s;"></div>
+            </div>
+        </div>
+
+        <div class="preloader-title">
+            <span>M</span><span>i</span><span>c</span><span>r</span><span>o</span><span>B</span><span>o</span><span>t</span>
+        </div>
+
+        <div class="preloader-progress">
+            <div class="preloader-percent" id="preloaderPercent">0%</div>
+            <div class="preloader-bar">
+                <div class="preloader-bar-fill"></div>
+            </div>
+        </div>
+
+        <div class="preloader-status" id="preloaderStatus">Inizializzazione sistema...</div>
+    </div>
+
+    <canvas id="bgCanvas"></canvas>
+
+    <nav id="navbar">
+        <a href="#hero" class="nav-logo" data-hover>
+            <span class="ld"></span>
+            Micro<em>Bot</em>
+        </a>
+
+        <ul class="nav-links">
+            <li><a href="#hero" data-nav data-hover>Home</a></li>
+            <li><a href="#dashboard" data-nav data-hover>Dashboard</a></li>
+            <li><a href="#investimento" data-nav data-hover>Investment</a></li>
+            <li><a href="#vision" data-nav data-hover>Vision</a></li>
+            <li><a href="#system" data-nav data-hover>System</a></li>
+            <li><a href="#simulation" data-nav data-hover>Simulation</a></li>
+            <li><a href="#network" data-nav data-hover>Network</a></li>
+            <li><a href="#energy" data-nav data-hover>Energy</a></li>
+            <li><a href="#tracking" data-nav data-hover>Tracking</a></li>
+            <li><a href="#arlab" data-nav data-hover>AR Lab</a></li>
+            <li><a href="#electromagnetism" data-nav data-hover>E.M.</a></li>
+            <li><a href="#viewer3d" data-nav data-hover>3D</a></li>
+            <li><a href="#terminal" data-nav data-hover>Terminal</a></li>
+            <li><a href="#physics" data-nav data-hover>Physics</a></li>
+            <li><a href="#patterns" data-nav data-hover>Patterns</a></li>
+            <li><a href="#sensors" data-nav data-hover>Sensors</a></li>
+            <li><a href="#bom" data-nav data-hover>BOM</a></li>
+            <li><a href="#roadmap" data-nav data-hover>Roadmap</a></li>
+            <li><a href="#contact" data-nav data-hover>Contact</a></li>
+        </ul>
+
+        <div class="nav-right">
+            <div class="nav-status">
+                <span class="nav-status-dot"></span>
+                <span>SYSTEM ONLINE</span>
+            </div>
+
+            <button class="theme-toggle" id="themeToggle" data-hover aria-label="Toggle theme">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+            </button>
+
+            <button class="nav-menu-btn" id="menuBtn" data-hover aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="#hero" data-ml data-hover>Home</a>
+        <a href="#dashboard" data-ml data-hover>Dashboard</a>
+        <a href="#investimento" data-ml data-hover>Investment</a>
+        <a href="#vision" data-ml data-hover>Vision</a>
+        <a href="#system" data-ml data-hover>System</a>
+        <a href="#simulation" data-ml data-hover>Simulation</a>
+        <a href="#network" data-ml data-hover>Network</a>
+        <a href="#energy" data-ml data-hover>Energy</a>
+        <a href="#tracking" data-ml data-hover>Tracking</a>
+        <a href="#arlab" data-ml data-hover>AR Lab</a>
+        <a href="#electromagnetism" data-ml data-hover>Electromagnetism</a>
+        <a href="#viewer3d" data-ml data-hover>3D Viewer</a>
+        <a href="#terminal" data-ml data-hover>Terminal</a>
+        <a href="#physics" data-ml data-hover>Physics</a>
+        <a href="#patterns" data-ml data-hover>Patterns</a>
+        <a href="#sensors" data-ml data-hover>Sensors</a>
+        <a href="#bom" data-ml data-hover>BOM</a>
+        <a href="#roadmap" data-ml data-hover>Roadmap</a>
+        <a href="#contact" data-ml data-hover>Contact</a>
+    </div>
+
+    <section class="hero" id="hero">
+        <div class="hero-bg-glow hero-glow-1"></div>
+        <div class="hero-bg-glow hero-glow-2"></div>
+        <div class="hero-bg-glow hero-glow-3"></div>
+        <div class="hero-grid"></div>
+
+        <div class="hero-inner">
+            <div class="hero-badge">
+                MicroBot Ecosystem — Swarm Robotics Platform — 2026
+            </div>
+
+            <h1>
+                <div class="line hero-line hero-line-1"><span>MicroBot</span></div>
+                <div class="line hero-line hero-line-2"><span>ULTRA</span></div>
+                <div class="line hero-line hero-line-3"><span>Ecosystem.</span></div>
+            </h1>
+
+            <p class="hero-sub">
+                Un ecosistema integrato che unisce elettromagnetismo, visione artificiale, simulazione interattiva,
+                monitoraggio in tempo reale e controllo embedded per creare sciami di microrobot modulari
+                capaci di aggregarsi, coordinarsi e adattarsi autonomamente.
+            </p>
+
+            <div class="hero-cta">
+                <a href="#dashboard" class="btn-primary" data-hover><span>Dashboard Live</span></a>
+                <a href="#investimento" class="btn-secondary" data-hover>Investor Room</a>
+                <a href="#simulation" class="btn-secondary" data-hover>Simulazione</a>
+            </div>
+
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <strong>120</strong>
+                    <span>FPS Tracking</span>
+                </div>
+                <div class="hero-stat">
+                    <strong>0.1mm</strong>
+                    <span>Precisione</span>
+                </div>
+                <div class="hero-stat">
+                    <strong>256</strong>
+                    <span>Max Unità</span>
+                </div>
+                <div class="hero-stat">
+                    <strong>&lt;5ms</strong>
+                    <span>Latenza</span>
+                </div>
+                <div class="hero-stat">
+                    <strong>€12</strong>
+                    <span>Per Bot</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="scroll-indicator">
+            <span>Scroll</span>
+            <div class="scroll-line"></div>
+        </div>
+    </section>
+
+    <section class="dashboard-section section-dark" id="dashboard">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">01 — Live Dashboard</div>
+                <h2 class="section-title">Monitoraggio del sistema in tempo reale.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                Tutti i parametri critici del sistema sono monitorati continuamente per garantire
+                prestazioni ottimali e rilevamento precoce di anomalie.
+            </p>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="dashboard-card card-success reveal stagger-1">
+                <div class="dashboard-label">Bot Attivi</div>
+                <div class="dashboard-value" id="dashBotCount">24</div>
+                <div class="dashboard-change up">↑ 3 negli ultimi 5min</div>
+                <canvas class="dashboard-chart" id="dashChart1"></canvas>
+            </div>
+
+            <div class="dashboard-card card-info reveal stagger-2">
+                <div class="dashboard-label">Frame Rate</div>
+                <div class="dashboard-value" id="dashFPS">120</div>
+                <div class="dashboard-change stable">— Stabile</div>
+                <canvas class="dashboard-chart" id="dashChart2"></canvas>
+            </div>
+
+            <div class="dashboard-card card-warning reveal stagger-3">
+                <div class="dashboard-label">Latenza Media</div>
+                <div class="dashboard-value" id="dashLatency">4.2<span style="font-size:1rem">ms</span></div>
+                <div class="dashboard-change up">↑ 0.3ms</div>
+                <canvas class="dashboard-chart" id="dashChart3"></canvas>
+            </div>
+
+            <div class="dashboard-card card-success reveal stagger-4">
+                <div class="dashboard-label">Energia Totale</div>
+                <div class="dashboard-value" id="dashEnergy">87<span style="font-size:1rem">%</span></div>
+                <div class="dashboard-change down">↓ 2% / ora</div>
+                <canvas class="dashboard-chart" id="dashChart4"></canvas>
+            </div>
+        </div>
+
+        <div class="dashboard-main">
+            <div class="dashboard-canvas-wrap reveal stagger-2">
+                <canvas class="dashboard-canvas" id="dashboardCanvas"></canvas>
+                <div class="dashboard-canvas-overlay">
+                    <span class="dashboard-canvas-chip live">LIVE</span>
+                    <span class="dashboard-canvas-chip">24 BOT</span>
+                    <span class="dashboard-canvas-chip">TRACKING ACTIVE</span>
+                </div>
+            </div>
+
+            <div class="dashboard-sidebar reveal stagger-3">
+                <div class="dashboard-gauge">
+                    <canvas class="gauge-canvas" id="gaugeTemp"></canvas>
+                    <div class="gauge-label">Temperatura Media</div>
+                    <div class="gauge-value" id="gaugeTempValue">32°C</div>
+                </div>
+
+                <div class="dashboard-gauge">
+                    <canvas class="gauge-canvas" id="gaugeCPU"></canvas>
+                    <div class="gauge-label">CPU Controller</div>
+                    <div class="gauge-value" id="gaugeCPUValue">45%</div>
+                </div>
+
+                <div class="dashboard-gauge">
+                    <canvas class="gauge-canvas" id="gaugeNetwork"></canvas>
+                    <div class="gauge-label">Network Load</div>
+                    <div class="gauge-value" id="gaugeNetworkValue">23%</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="vision">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">02 — Vision</div>
+                <h2 class="section-title">Una visione integrata di robotica modulare.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                MicroBot non è solo un prototipo hardware: è un ecosistema che connette design, simulazione,
+                controllo embedded, aggregazione magnetica, visione artificiale e interazione uomo-macchina.
+            </p>
+        </div>
+
+        <div class="vision-grid">
+            <div class="vision-card glass-card reveal stagger-1" data-hover>
+                <span class="vision-num">01</span>
+                <div class="vision-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <h3>Modularità Reale</h3>
+                <p>
+                    Ogni MicroBot è un modulo indipendente ma cooperativo, capace di pattern, formazione,
+                    docking e riconfigurazione dinamica in funzione del compito e del contesto operativo.
+                </p>
+            </div>
+
+            <div class="vision-card glass-card reveal stagger-2" data-hover>
+                <span class="vision-num">02</span>
+                <div class="vision-icon">
+                    <svg viewBox="0 0 24 24">
+                        <rect x="2" y="3" width="20" height="14" rx="2"/>
+                        <line x1="8" y1="21" x2="16" y2="21"/>
+                        <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                </div>
+                <h3>Digital Twin</h3>
+                <p>
+                    Simulazione, documentazione, firmware, visualizzazione dati e prototipo fisico convivono
+                    come parti integrate della stessa piattaforma, rendendo possibile uno sviluppo incrementale
+                    e verificabile.
+                </p>
+            </div>
+
+            <div class="vision-card glass-card reveal stagger-3" data-hover>
+                <span class="vision-num">03</span>
+                <div class="vision-icon">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <circle cx="12" cy="12" r="3"/>
+                        <line x1="12" y1="2" x2="12" y2="4"/>
+                        <line x1="12" y1="20" x2="12" y2="22"/>
+                    </svg>
+                </div>
+                <h3>Visione Artificiale</h3>
+                <p>
+                    Il sistema di tracking permette localizzazione e coordinamento in tempo reale, con dati
+                    continui su posizione, traiettoria, stato e relazioni tra i moduli all’interno dello sciame.
+                </p>
+            </div>
+
+            <div class="vision-card glass-card reveal stagger-4" data-hover>
+                <span class="vision-num">04</span>
+                <div class="vision-icon">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+                    </svg>
+                </div>
+                <h3>Controllo Magnetico</h3>
+                <p>
+                    Campi elettromagnetici controllati permettono attrazione, repulsione, aggancio e distacco
+                    programmabile, trasformando l’interazione fisica tra i bot in una funzione attiva del sistema.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-dark" id="system">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">03 — System Architecture</div>
+                <h2 class="section-title">Architettura a 6 livelli.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                L'ecosistema connette input utente, sistema di visione, software di orchestrazione,
+                controller embedded, campo elettromagnetico e moduli fisici in un ciclo di controllo unificato.
+            </p>
+        </div>
+
+        <div class="system-grid">
+            <div class="system-card reveal stagger-1" data-hover>
+                <div class="system-card-num">01</div>
+                <h3>Input</h3>
+                <p>Gesture · IMU · VR · Audio</p>
+            </div>
+
+            <div class="system-card reveal stagger-2" data-hover>
+                <div class="system-card-num">02</div>
+                <h3>Vision</h3>
+                <p>Camera · Tracking · AI</p>
+            </div>
+
+            <div class="system-card reveal stagger-3" data-hover>
+                <div class="system-card-num">03</div>
+                <h3>Software</h3>
+                <p>UI · Planner · Sim</p>
+            </div>
+
+            <div class="system-card reveal stagger-4" data-hover>
+                <div class="system-card-num">04</div>
+                <h3>Controller</h3>
+                <p>ESP32 · Safety · Logic</p>
+            </div>
+
+            <div class="system-card reveal stagger-5" data-hover>
+                <div class="system-card-num">05</div>
+                <h3>EM Field</h3>
+                <p>Coils · Magnets · Docking</p>
+            </div>
+
+            <div class="system-card reveal stagger-6" data-hover>
+                <div class="system-card-num">06</div>
+                <h3>MicroBot</h3>
+                <p>Motion · Status · Aggregation</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="simulation">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">04 — Swarm Simulation</div>
+                <h2 class="section-title">Simulazione interattiva avanzata.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                Clicca e trascina nel canvas per influenzare i bot. Esplora 8 pattern diversi,
+                modifica il parametro W e osserva il comportamento collettivo emergente.
+            </p>
+        </div>
+
+        <div class="simulation-wrap">
+            <div class="simulation-canvas-wrap reveal-scale">
+                <canvas id="simCanvas"></canvas>
+
+                <div class="sim-overlay">
+                    <span class="sim-chip highlight" id="simPatternLabel">CIRCLE</span>
+                    <span class="sim-chip" id="simCountLabel">N=60</span>
+                    <span class="sim-chip" id="simWLabel">W=0.50</span>
+                    <span class="sim-chip" id="simFpsLabel">60 FPS</span>
+                </div>
+
+                <div class="sim-controls-row">
+                    <button class="sim-mic-btn" id="micBtn" data-hover>🎤 Audio 4D/5D</button>
+
+                    <div class="sim-speed-control">
+                        <span class="sim-speed-label">SPEED</span>
+                        <input
+                            type="range"
+                            id="speedSlider"
+                            min="25"
+                            max="200"
+                            value="100"
+                            style="width: 100px;"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <aside class="simulation-panel reveal stagger-2">
+                <h3>Control Panel</h3>
+
+                <div class="panel-group">
+                    <label>Pattern</label>
+                    <div class="pattern-buttons" id="patternButtons">
+                        <button class="pattern-btn active" data-pattern="0">Circle</button>
+                        <button class="pattern-btn" data-pattern="1">Vortex</button>
+                        <button class="pattern-btn" data-pattern="2">Wave</button>
+                        <button class="pattern-btn" data-pattern="3">Line</button>
+                        <button class="pattern-btn" data-pattern="4">Boids</button>
+                        <button class="pattern-btn" data-pattern="5">Spiral</button>
+                        <button class="pattern-btn" data-pattern="6">Fig-8</button>
+                        <button class="pattern-btn" data-pattern="7">Grid</button>
+                    </div>
+                </div>
+
+                <div class="panel-group">
+                    <label>W Parameter (Rigidity)</label>
+                    <input type="range" id="wSlider" min="0" max="100" value="50" />
+                    <div class="panel-range-values">
+                        <span>Fluido</span>
+                        <strong id="wValue">0.50</strong>
+                        <span>Solido</span>
+                    </div>
+                </div>
+
+                <div class="panel-group">
+                    <label>Numero Bot</label>
+                    <input type="range" id="countSlider" min="10" max="150" value="60" />
+                    <div class="panel-range-values">
+                        <span>10</span>
+                        <strong id="countValue">60 bot</strong>
+                        <span>150</span>
+                    </div>
+                </div>
+
+                <div class="panel-group">
+                    <label>Forza Interazione</label>
+                    <input type="range" id="forceSlider" min="10" max="100" value="50" />
+                    <div class="panel-range-values">
+                        <span>Debole</span>
+                        <strong id="forceValue">50%</strong>
+                        <span>Forte</span>
+                    </div>
+                </div>
+
+                <div class="sim-stats-grid">
+                    <div class="sim-stat-box">
+                        <div class="sim-stat-value" id="statSpeed">0.0</div>
+                        <div class="sim-stat-label">Velocità</div>
+                    </div>
+
+                    <div class="sim-stat-box">
+                        <div class="sim-stat-value" id="statLinks">0</div>
+                        <div class="sim-stat-label">Links</div>
+                    </div>
+
+                    <div class="sim-stat-box">
+                        <div class="sim-stat-value" id="statEnergy">100%</div>
+                        <div class="sim-stat-label">Energia</div>
+                    </div>
+
+                    <div class="sim-stat-box">
+                        <div class="sim-stat-value" id="statDocked">0</div>
+                        <div class="sim-stat-label">Docked</div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </section>
+
+    <section class="network-section section-dark" id="network">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">05 — Network Topology</div>
+                <h2 class="section-title">Visualizzazione della rete ESP-NOW.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                Il protocollo ESP-NOW permette comunicazione a bassa latenza tra controller e bot,
+                con heartbeat continuo e gestione intelligente dei fallimenti.
+            </p>
+        </div>
+
+        <div class="network-container">
+            <div class="network-canvas-wrap reveal-left">
+                <canvas class="network-canvas" id="networkCanvas"></canvas>
+
+                <div class="network-legend">
+                    <div class="network-legend-item">
+                        <div class="network-legend-dot controller"></div>
+                        <span>Controller</span>
+                    </div>
+
+                    <div class="network-legend-item">
+                        <div class="network-legend-dot bot"></div>
+                        <span>MicroBot</span>
+                    </div>
+
+                    <div class="network-legend-item">
+                        <div class="network-legend-dot active"></div>
+                        <span>Comunicazione Attiva</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="network-info reveal-right">
+                <h3>Protocollo ESP-NOW</h3>
+
+                <p>
+                    ESP-NOW è un protocollo proprietario Espressif che permette comunicazione diretta tra dispositivi
+                    senza bisogno di access point, garantendo latenze molto basse e un overhead ridotto rispetto
+                    a uno stack Wi-Fi completo.
+                </p>
+
+                <p>
+                    Ogni MicroBot mantiene una connessione attiva con il controller centrale e può ricevere
+                    comandi di posizione, stato, sincronizzazione e configurazione in tempo reale.
+                    Questo rende possibile il coordinamento dello sciame e la gestione centralizzata delle interazioni.
+                </p>
+
+                <div class="network-stats">
+                    <div class="network-stat">
+                        <div class="network-stat-value" id="netPackets">1.2K</div>
+                        <div class="network-stat-label">Packets / sec</div>
+                    </div>
+
+                    <div class="network-stat">
+                        <div class="network-stat-value" id="netRSSI">-42</div>
+                        <div class="network-stat-label">Avg RSSI (dBm)</div>
+                    </div>
+
+                    <div class="network-stat">
+                        <div class="network-stat-value" id="netLoss">0.1%</div>
+                        <div class="network-stat-label">Packet Loss</div>
+                    </div>
+
+                    <div class="network-stat">
+                        <div class="network-stat-value" id="netRetry">12</div>
+                        <div class="network-stat-label">Retries / min</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="energy">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">06 — Energy Flow</div>
+                <h2 class="section-title">Gestione energetica distribuita.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                Ogni MicroBot gestisce autonomamente il proprio bilancio energetico,
+                ottimizzando consumo e prestazioni in base al contesto operativo.
+            </p>
+        </div>
+
+        <div class="energy-container">
+            <div class="energy-canvas-wrap reveal-scale">
+                <canvas class="energy-canvas" id="energyCanvas"></canvas>
+
+                <div class="energy-controls">
+                    <button class="energy-btn active" id="energyAll">Tutti</button>
+                    <button class="energy-btn" id="energyCoils">Coils</button>
+                    <button class="energy-btn" id="energyLED">LED</button>
+                    <button class="energy-btn" id="energyComm">Comunicazione</button>
+                    <button class="energy-btn" id="energyCPU">CPU</button>
+                </div>
+            </div>
+
+            <div class="energy-cards">
+                <div class="energy-card reveal stagger-1" data-hover>
+                    <div class="energy-card-icon">⚡</div>
+                    <h4>Batteria</h4>
+                    <p>Li-Po 100mAh, autonomia 2-4 ore in uso attivo</p>
+                </div>
+
+                <div class="energy-card reveal stagger-2" data-hover>
+                    <div class="energy-card-icon">🔄</div>
+                    <h4>Derating</h4>
+                    <p>Riduzione automatica della potenza sopra i 45°C per proteggere componenti e stabilità del sistema</p>
+                </div>
+
+                <div class="energy-card reveal stagger-3" data-hover>
+                    <div class="energy-card-icon">💤</div>
+                    <h4>Sleep Mode</h4>
+                    <p>Consumo inferiore a 10µA in deep sleep per preservare la carica nei periodi di inattività</p>
+                </div>
+
+                <div class="energy-card reveal stagger-4" data-hover>
+                    <div class="energy-card-icon">🔌</div>
+                    <h4>Ricarica</h4>
+                    <p>Pad induttivo opzionale per ricarica wireless e gestione semplificata di più unità</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-dark" id="tracking">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">07 — Hand Tracking</div>
+                <h2 class="section-title">Localizzazione mano e controllo gestuale in tempo reale.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                Il sistema utilizza la fotocamera per tracciare mano, viso e landmark,
+                trasformando aperture, chiusure e movimenti della testa in input di controllo per MicroBot.
+            </p>
+        </div>
+
+        <div class="tracking-live-wrap">
+            <div class="tracking-live-grid">
+                <div class="tracking-panel reveal-left">
+                    <div class="tracking-panel-header">
+                        <span class="tracking-panel-title">Neural Dots Visualizer</span>
+                        <span class="tracking-panel-badge" id="trackingGestureBadge">WAITING</span>
+                    </div>
+
+                    <canvas id="trackingCanvas" class="tracking-live-canvas"></canvas>
+
+                    <div class="tracking-panel-footer">
+                        <div class="tracking-mini-stat">
+                            <span class="tracking-mini-label">Gesture</span>
+                            <span class="tracking-mini-value" id="trackGesture">--</span>
+                        </div>
+                        <div class="tracking-mini-stat">
+                            <span class="tracking-mini-label">Openness</span>
+                            <span class="tracking-mini-value" id="trackOpenness">0%</span>
+                        </div>
+                        <div class="tracking-mini-stat">
+                            <span class="tracking-mini-label">Landmarks</span>
+                            <span class="tracking-mini-value" id="trackLandmarks">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tracking-panel reveal-right">
+                    <div class="tracking-panel-header">
+                        <span class="tracking-panel-title">Camera Feed</span>
+
+                        <div style="display:flex; gap:0.5rem; align-items:center;">
+                            <button class="tracking-btn" id="startTracking">START</button>
+                            <button class="tracking-btn" id="stopTracking">STOP</button>
+                            <span class="tracking-panel-badge" id="cameraStatus">OFFLINE</span>
+                        </div>
+                    </div>
+
+                    <div class="tracking-camera-wrap">
+                        <video id="handVideo" autoplay playsinline muted></video>
+                        <canvas id="handOverlay"></canvas>
+                    </div>
+
+                    <div class="tracking-panel-footer">
+                        <div class="tracking-mini-stat">
+                            <span class="tracking-mini-label">Camera</span>
+                            <span class="tracking-mini-value" id="trackCamera">OFF</span>
+                        </div>
+                        <div class="tracking-mini-stat">
+                            <span class="tracking-mini-label">State</span>
+                            <span class="tracking-mini-value" id="trackState">Idle</span>
+                        </div>
+                        <div class="tracking-mini-stat">
+                            <span class="tracking-mini-label">FPS</span>
+                            <span class="tracking-mini-value" id="trackFps">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tracking-mesh-wrap reveal">
+    <div class="tracking-panel">
+        <div class="tracking-panel-header">
+            <span class="tracking-panel-title">Swarm Neural Mesh</span>
+            <span class="tracking-panel-badge live" id="swarmMeshStatus">SYNCED</span>
+        </div>
+
+        <canvas id="swarmMeshCanvas" class="tracking-mesh-canvas"></canvas>
+
+        <div class="tracking-panel-footer">
+            <div class="tracking-mini-stat">
+                <span class="tracking-mini-label">Nodes</span>
+                <span class="tracking-mini-value" id="swarmNodes">24</span>
+            </div>
+
+            <div class="tracking-mini-stat">
+                <span class="tracking-mini-label">Links</span>
+                <span class="tracking-mini-value" id="swarmLinks">0</span>
+            </div>
+
+            <div class="tracking-mini-stat">
+                <span class="tracking-mini-label">Mode</span>
+                <span class="tracking-mini-value" id="swarmMode">Idle</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+            <div class="tracking-bottom-stats reveal">
+                <div class="tracking-stat-card">
+                    <div class="tracking-stat-icon">✋</div>
+                    <div class="tracking-stat-content">
+                        <div class="tracking-stat-value" id="trackCount">0</div>
+                        <div class="tracking-stat-label">Mani Rilevate</div>
+                    </div>
+                </div>
+
+                <div class="tracking-stat-card">
+                    <div class="tracking-stat-icon">🎯</div>
+                    <div class="tracking-stat-content">
+                        <div class="tracking-stat-value" id="trackAccuracy">Live</div>
+                        <div class="tracking-stat-label">Tracking Status</div>
+                    </div>
+                </div>
+
+                <div class="tracking-stat-card">
+                    <div class="tracking-stat-icon">⚡</div>
+                    <div class="tracking-stat-content">
+                        <div class="tracking-stat-value" id="trackLatency">Realtime</div>
+                        <div class="tracking-stat-label">Response</div>
+                    </div>
+                </div>
+
+                <div class="tracking-stat-card">
+                    <div class="tracking-stat-icon">🧠</div>
+                    <div class="tracking-stat-content">
+                        <div class="tracking-stat-value" id="trackMode">Open</div>
+                        <div class="tracking-stat-label">Detected Mode</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-dark" id="arlab">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">08 — AR Interaction Lab</div>
+                <h2 class="section-title">Manipola il MicroBot con le tue mani.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                Usa la fotocamera e le tue dita per afferrare, spostare e scomporre il modello 3D del MicroBot.
+                Una mano per muoverlo, due mani per esplorarne ogni componente.
+            </p>
+        </div>
+
+        <div class="arlab-container">
+            <div class="arlab-viewport reveal-scale">
+                <video id="arVideo" autoplay playsinline muted></video>
+                <canvas id="arCanvas"></canvas>
+
+                <div class="arlab-hud-tl">
+                    <span class="arlab-chip" id="arModeChip">IDLE</span>
+                    <span class="arlab-chip" id="arHandsChip">0 HANDS</span>
+                </div>
+
+                <div class="arlab-hud-br">
+                    <span class="arlab-chip" id="arFpsChip">0 FPS</span>
+                </div>
+
+                <div id="arInstructions" class="arlab-instructions">
+                    <div class="arlab-instr-icon">👋</div>
+                    <div class="arlab-instr-text">Premi START e mostra le mani alla fotocamera</div>
+                    <div class="arlab-instr-sub">Una mano: afferra e sposta · Due mani: scomponi pezzo per pezzo</div>
+                </div>
+            </div>
+
+            <aside class="arlab-sidebar reveal stagger-2">
+                <div class="arlab-controls">
+                    <button class="arlab-btn arlab-btn-start" id="arStartBtn" type="button">START AR</button>
+                    <button class="arlab-btn" id="arStopBtn" type="button">STOP</button>
+                    <button class="arlab-btn" id="arResetBtn" type="button">RESET</button>
+                </div>
+
+                <div class="arlab-info-card">
+                    <div class="arlab-info-title">Stato Sistema</div>
+                    <div class="arlab-status-grid">
+                        <div class="arlab-status-item">
+                            <span class="arlab-status-label">Camera</span>
+                            <span class="arlab-status-value" id="arCameraStatus">OFF</span>
+                        </div>
+                        <div class="arlab-status-item">
+                            <span class="arlab-status-label">Tracking</span>
+                            <span class="arlab-status-value" id="arTrackingStatus">OFF</span>
+                        </div>
+                        <div class="arlab-status-item">
+                            <span class="arlab-status-label">Gesture</span>
+                            <span class="arlab-status-value" id="arGestureStatus">—</span>
+                        </div>
+                        <div class="arlab-status-item">
+                            <span class="arlab-status-label">Modalità</span>
+                            <span class="arlab-status-value" id="arModeStatus">Assemblato</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arlab-info-card">
+                    <div class="arlab-info-title">Componenti MicroBot</div>
+                    <div class="arlab-parts-list" id="arPartsList">
+                        <div class="arlab-part" data-part="shell"><span class="arlab-part-dot" style="background:#00d4ff"></span>Guscio esterno</div>
+                        <div class="arlab-part" data-part="dome"><span class="arlab-part-dot" style="background:#00b8d9"></span>Cupola superiore</div>
+                        <div class="arlab-part" data-part="bottomCap"><span class="arlab-part-dot" style="background:#0a2a3a"></span>Piastra base</div>
+                        <div class="arlab-part" data-part="coilPrimary"><span class="arlab-part-dot" style="background:#ff8a3d"></span>Bobina primaria</div>
+                        <div class="arlab-part" data-part="coilSecondary"><span class="arlab-part-dot" style="background:#ffa726"></span>Bobina secondaria</div>
+                        <div class="arlab-part" data-part="magnetCore"><span class="arlab-part-dot" style="background:#ff4d6a"></span>Nucleo magnetico</div>
+                        <div class="arlab-part" data-part="poleNorth"><span class="arlab-part-dot" style="background:#ff6b6b"></span>Polo Nord</div>
+                        <div class="arlab-part" data-part="poleSouth"><span class="arlab-part-dot" style="background:#6b8fff"></span>Polo Sud</div>
+                        <div class="arlab-part" data-part="pcb"><span class="arlab-part-dot" style="background:#00c853"></span>PCB principale</div>
+                        <div class="arlab-part" data-part="chip"><span class="arlab-part-dot" style="background:#1a1a2e"></span>ESP32 Chip</div>
+                        <div class="arlab-part" data-part="antenna"><span class="arlab-part-dot" style="background:#00ff88"></span>Antenna wireless</div>
+                        <div class="arlab-part" data-part="battery"><span class="arlab-part-dot" style="background:#ffbe2e"></span>Batteria LiPo</div>
+                        <div class="arlab-part" data-part="ledStatus"><span class="arlab-part-dot" style="background:#e040fb"></span>LED RGB di stato</div>
+                        <div class="arlab-part" data-part="sensorArray"><span class="arlab-part-dot" style="background:#00e5ff"></span>Array sensori</div>
+                        <div class="arlab-part" data-part="gears"><span class="arlab-part-dot" style="background:#b0bec5"></span>Micro-ingranaggi</div>
+                    </div>
+                </div>
+
+                <div class="arlab-info-card">
+                    <div class="arlab-info-title">Guida Gesture</div>
+                    <div class="arlab-gesture-guide">
+                        <div class="arlab-gesture-row">
+                            <span class="arlab-gesture-icon">🤏</span>
+                            <span>Pizzica per afferrare</span>
+                        </div>
+                        <div class="arlab-gesture-row">
+                            <span class="arlab-gesture-icon">✋</span>
+                            <span>Apri per rilasciare</span>
+                        </div>
+                        <div class="arlab-gesture-row">
+                            <span class="arlab-gesture-icon">🤲</span>
+                            <span>Due mani: scomponi</span>
+                        </div>
+                        <div class="arlab-gesture-row">
+                            <span class="arlab-gesture-icon">👐</span>
+                            <span>Allarga: esplodi tutto</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </section>
+
+    <section id="electromagnetism">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">08 — Electromagnetism</div>
+                <h2 class="section-title">Principi di elettromagnetismo applicato.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                Comprendere i principi fisici che governano le interazioni magnetiche è fondamentale
+                per progettare sistemi di microrobotica modulare efficaci, stabili e controllabili.
+            </p>
+        </div>
+
+        <div class="em-content">
+            <div class="em-block reveal">
+                <div class="em-block-header">
+                    <span class="em-block-num">EM.01</span>
+                    <h3>Generazione del Campo Magnetico</h3>
+                </div>
+                <p>
+                    Ogni MicroBot è equipaggiato con micro-bobine avvolte attorno a un nucleo ferromagnetico.
+                    Quando una corrente elettrica attraversa la bobina, si genera un campo magnetico proporzionale
+                    all'intensità della corrente, al numero di spire e alle caratteristiche del materiale impiegato.
+                </p>
+                <p>
+                    Questo principio permette di controllare in modo attivo la polarità e l’intensità del campo
+                    prodotto da ciascun modulo, rendendo possibile l’interazione programmabile tra bot vicini.
+                </p>
+
+                <div class="formula-box">
+                    <div class="formula">B = μ₀ · (N · I) / L</div>
+                    <div class="formula-desc">Campo magnetico in un solenoide ideale</div>
+                    <div class="formula-legend">
+                        <div class="legend-item"><span class="var">B</span><span class="def">Campo (Tesla)</span></div>
+                        <div class="legend-item"><span class="var">μ₀</span><span class="def">Permeabilità del vuoto</span></div>
+                        <div class="legend-item"><span class="var">N</span><span class="def">Numero di spire</span></div>
+                        <div class="legend-item"><span class="var">I</span><span class="def">Corrente (A)</span></div>
+                        <div class="legend-item"><span class="var">L</span><span class="def">Lunghezza del solenoide (m)</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="em-block reveal stagger-1">
+                <div class="em-block-header">
+                    <span class="em-block-num">EM.02</span>
+                    <h3>Forza di Attrazione e Repulsione</h3>
+                </div>
+                <p>
+                    La forza magnetica tra due MicroBot dipende dalla configurazione di polarità e dalla distanza relativa.
+                    Poli opposti generano attrazione, mentre poli uguali producono repulsione. In un sistema reale,
+                    la forza dipende anche da orientamento, geometria dei magneti, intensità del campo e materiali.
+                </p>
+                <p>
+                    Questa interazione è alla base dei meccanismi di docking, separazione controllata e
+                    riorganizzazione collettiva dello sciame.
+                </p>
+
+                <div class="formula-box">
+                    <div class="formula">F ∝ (m₁ · m₂) / r²</div>
+                    <div class="formula-desc">Relazione semplificata tra dipoli magnetici</div>
+                    <div class="formula-legend">
+                        <div class="legend-item"><span class="var">F</span><span class="def">Forza magnetica</span></div>
+                        <div class="legend-item"><span class="var">m₁, m₂</span><span class="def">Momenti magnetici</span></div>
+                        <div class="legend-item"><span class="var">r</span><span class="def">Distanza tra i moduli</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="em-block reveal stagger-2">
+                <div class="em-block-header">
+                    <span class="em-block-num">EM.03</span>
+                    <h3>Soglie di Aggancio e Isteresi</h3>
+                </div>
+                <p>
+                    Per evitare oscillazioni continue tra stati di aggancio e distacco, il sistema implementa
+                    una logica di isteresi. In pratica, la soglia di aggancio è diversa dalla soglia di rilascio,
+                    creando una zona di stabilità utile per il comportamento meccanico e il controllo software.
+                </p>
+                <p>
+                    Questo approccio riduce instabilità, falsi docking e micro-oscillazioni quando due bot
+                    si trovano vicini al limite di interazione.
+                </p>
+
+                <div class="formula-box">
+                    <div class="formula">d_attach &lt; d &lt; d_detach → STABLE</div>
+                    <div class="formula-desc">Zona di isteresi per stabilità dell’aggancio</div>
+                    <div class="formula-legend">
+                        <div class="legend-item"><span class="var">d_attach</span><span class="def">Soglia di aggancio</span></div>
+                        <div class="legend-item"><span class="var">d_detach</span><span class="def">Soglia di distacco</span></div>
+                        <div class="legend-item"><span class="var">d</span><span class="def">Distanza istantanea</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="em-block reveal stagger-3">
+                <div class="em-block-header">
+                    <span class="em-block-num">EM.04</span>
+                    <h3>Energia, Attrito e Stabilità del Sistema</h3>
+                </div>
+                <p>
+                    Affinché due MicroBot restino realmente agganciati, la forza magnetica deve superare le forze
+                    resistenti del sistema, come attrito statico, urti locali, vibrazioni e piccole perturbazioni dinamiche.
+                    Questo significa che la progettazione non può limitarsi alla presenza del campo magnetico,
+                    ma deve considerare il bilancio completo delle forze.
+                </p>
+                <p>
+                    In termini pratici, il docking è efficace solo quando la forza disponibile è sufficiente
+                    a vincere la soglia minima necessaria al mantenimento del contatto, garantendo stabilità
+                    anche durante il movimento o la riconfigurazione dello sciame.
+                </p>
+
+                <div class="formula-box">
+                    <div class="formula">F_mag &gt; μ_s · N</div>
+                    <div class="formula-desc">Condizione minima per superare l’attrito statico</div>
+                    <div class="formula-legend">
+                        <div class="legend-item"><span class="var">F_mag</span><span class="def">Forza magnetica utile</span></div>
+                        <div class="legend-item"><span class="var">μ_s</span><span class="def">Coefficiente di attrito statico</span></div>
+                        <div class="legend-item"><span class="var">N</span><span class="def">Forza normale</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-dark" id="viewer3d">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">09 — 3D Viewer</div>
+                <h2 class="section-title">Exploded MicroBot Viewer.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                Esplora la struttura interna del MicroBot con il viewer 3D interattivo.
+                Visualizza componenti, sottoinsiemi e relazioni spaziali tra bobine, magneti,
+                elettronica e struttura esterna.
+            </p>
+        </div>
+
+        <div class="viewer3d-wrap">
+            <div class="viewer3d-main">
+                <div class="viewer3d-canvas-wrap reveal-left">
+                    <canvas id="viewerCanvas"></canvas>
+                </div>
+
+                <div class="viewer3d-sidebar reveal-right">
+                    <div class="viewer-btn-group">
+                        <h4>Vista</h4>
+                        <button class="viewer-btn active" data-view="0">Assemblato</button>
+                        <button class="viewer-btn" data-view="1">Esploso</button>
+                        <button class="viewer-btn" data-view="2">Coil + Magneti</button>
+                        <button class="viewer-btn" data-view="3">Elettronica</button>
+                    </div>
+
+                    <div class="viewer-info">
+                        <h4>Specifiche</h4>
+
+                        <div class="viewer-info-item">
+                            <span>Dimensioni</span>
+                            <span>25 × 25 × 35mm</span>
+                        </div>
+
+                        <div class="viewer-info-item">
+                            <span>Peso</span>
+                            <span>8–12g</span>
+                        </div>
+
+                        <div class="viewer-info-item">
+                            <span>Materiale</span>
+                            <span>PLA / PETG</span>
+                        </div>
+
+                        <div class="viewer-info-item">
+                            <span>Coils</span>
+                            <span>4 × micro-coils</span>
+                        </div>
+
+                        <div class="viewer-info-item">
+                            <span>Magneti</span>
+                            <span>NdFeB N52</span>
+                        </div>
+
+                        <div class="viewer-info-item">
+                            <span>MCU</span>
+                            <span>ESP32-S3</span>
+                        </div>
+
+                        <div class="viewer-info-item">
+                            <span>Alimentazione</span>
+                            <span>Li-Po 3.7V</span>
+                        </div>
+
+                        <div class="viewer-info-item">
+                            <span>Indicazione</span>
+                            <span>RGB LED</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="terminal">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">10 — System Terminal</div>
+                <h2 class="section-title">Interfaccia di controllo diretto.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                Terminale interattivo per monitoraggio, debug e invio comandi al sistema MicroBot.
+                Permette accesso diretto allo stato dello sciame e al comportamento dei singoli moduli.
+            </p>
+        </div>
+
+        <div class="terminal-container">
+            <div class="terminal-window reveal-scale">
+                <div class="terminal-header">
+                    <div class="terminal-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <div class="terminal-title">microbot@controller:~</div>
+                </div>
+
+                <div class="terminal-body" id="terminalBody">
+                    <div class="terminal-line">
+                        <span class="prompt">></span>
+                        <span class="command">boot sequence initiated...</span>
+                    </div>
+
+                    <div class="terminal-line">
+                        <span class="output">✔ System check complete</span>
+                    </div>
+
+                    <div class="terminal-line">
+                        <span class="output">✔ Network initialized</span>
+                    </div>
+
+                    <div class="terminal-line">
+                        <span class="output">✔ 24 MicroBot connected</span>
+                    </div>
+
+                    <div class="terminal-line">
+                        <span class="output">✔ Tracking system online</span>
+                    </div>
+
+                    <div class="terminal-line">
+                        <span class="output">✔ Electromagnetic control ready</span>
+                    </div>
+
+                    <div class="terminal-line active">
+                        <span class="prompt">></span>
+                        <span class="command" id="terminalInput"></span>
+                        <span class="cursor-blink">|</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="terminal-side reveal-right">
+                <h3>Comandi Disponibili</h3>
+
+                <div class="terminal-commands">
+                    <div class="terminal-command" data-cmd="status">status</div>
+                    <div class="terminal-command" data-cmd="scan">scan</div>
+                    <div class="terminal-command" data-cmd="connect">connect</div>
+                    <div class="terminal-command" data-cmd="pattern circle">pattern circle</div>
+                    <div class="terminal-command" data-cmd="pattern wave">pattern wave</div>
+                    <div class="terminal-command" data-cmd="pattern vortex">pattern vortex</div>
+                    <div class="terminal-command" data-cmd="dock all">dock all</div>
+                    <div class="terminal-command" data-cmd="release all">release all</div>
+                    <div class="terminal-command" data-cmd="reset">reset</div>
+                </div>
+
+                <p class="terminal-desc">
+                    Clicca un comando oppure scrivilo manualmente per simulare l’interazione con il controller.
+                    Il sistema risponde in tempo reale aggiornando lo stato dello sciame.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section id="physics">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">11 — Physics Engine</div>
+                <h2 class="section-title">Modello fisico e dinamica del sistema.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                Il comportamento dei MicroBot non dipende solo dal software, ma da un equilibrio tra
+                forze magnetiche, attrito, inerzia, distanza reciproca e soglie di stabilità.
+                Questa sezione riassume i principi fisici che rendono possibile il controllo del sistema.
+            </p>
+        </div>
+
+        <div class="em-content">
+            <div class="em-block reveal">
+                <div class="em-block-header">
+                    <span class="em-block-num">PH.01</span>
+                    <h3>Dinamica del Moto</h3>
+                </div>
+                <p>
+                    Ogni MicroBot può essere descritto come un corpo soggetto a forze risultanti dovute
+                    al target di movimento, alle interazioni magnetiche, all’attrito con la superficie
+                    e alle piccole perturbazioni ambientali. La traiettoria osservata è quindi il risultato
+                    della somma di contributi fisici e di controllo.
+                </p>
+                <p>
+                    Questo approccio è utile sia nella simulazione sia nel prototipo reale, perché permette
+                    di prevedere accelerazioni, stabilità e comportamento collettivo durante il movimento.
+                </p>
+
+                <div class="formula-box">
+                    <div class="formula">m · a = ΣF</div>
+                    <div class="formula-desc">Seconda legge di Newton applicata al singolo modulo</div>
+                    <div class="formula-legend">
+                        <div class="legend-item"><span class="var">m</span><span class="def">Massa del MicroBot</span></div>
+                        <div class="legend-item"><span class="var">a</span><span class="def">Accelerazione</span></div>
+                        <div class="legend-item"><span class="var">ΣF</span><span class="def">Somma delle forze agenti</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="em-block reveal stagger-1">
+                <div class="em-block-header">
+                    <span class="em-block-num">PH.02</span>
+                    <h3>Forza Magnetica Effettiva</h3>
+                </div>
+                <p>
+                    La forza magnetica reale tra due moduli non dipende solo dalla distanza, ma anche
+                    dall’orientamento relativo, dalla distribuzione del campo, dai materiali presenti
+                    e dalla geometria dell’interfaccia di contatto. Nelle prime fasi progettuali si usa
+                    spesso una relazione semplificata utile per avere ordini di grandezza credibili.
+                </p>
+                <p>
+                    Questa stima aiuta a capire se l’interazione disponibile è sufficiente a produrre
+                    docking, repulsione o riallineamento tra i MicroBot.
+                </p>
+
+                <div class="formula-box">
+                    <div class="formula">F_mag ∝ (m₁ · m₂) / r²</div>
+                    <div class="formula-desc">Stima semplificata dell’interazione magnetica</div>
+                    <div class="formula-legend">
+                        <div class="legend-item"><span class="var">F_mag</span><span class="def">Forza magnetica</span></div>
+                        <div class="legend-item"><span class="var">m₁, m₂</span><span class="def">Momenti magnetici equivalenti</span></div>
+                        <div class="legend-item"><span class="var">r</span><span class="def">Distanza tra i moduli</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="em-block reveal stagger-2">
+                <div class="em-block-header">
+                    <span class="em-block-num">PH.03</span>
+                    <h3>Attrito Statico e Soglia di Movimento</h3>
+                </div>
+                <p>
+                    Perché un MicroBot inizi davvero a muoversi oppure resti agganciato a un altro modulo,
+                    la forza disponibile deve superare una soglia minima imposta dall’attrito statico.
+                    Questo vincolo è fondamentale nella progettazione, perché distingue una semplice presenza
+                    di campo magnetico da un’interazione realmente efficace.
+                </p>
+                <p>
+                    Se la forza magnetica o di controllo resta sotto questa soglia, il sistema può sembrare
+                    attivo ma non produrre alcun effetto meccanico utile.
+                </p>
+
+                <div class="formula-box">
+                    <div class="formula">F &gt; μ_s · N</div>
+                    <div class="formula-desc">Condizione minima per superare l’attrito statico</div>
+                    <div class="formula-legend">
+                        <div class="legend-item"><span class="var">F</span><span class="def">Forza applicata</span></div>
+                        <div class="legend-item"><span class="var">μ_s</span><span class="def">Coefficiente di attrito statico</span></div>
+                        <div class="legend-item"><span class="var">N</span><span class="def">Forza normale</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="em-block reveal stagger-3">
+                <div class="em-block-header">
+                    <span class="em-block-num">PH.04</span>
+                    <h3>Energia e Stabilità del Docking</h3>
+                </div>
+                <p>
+                    Il docking tra due moduli è stabile solo quando il sistema si trova in una configurazione
+                    energeticamente favorevole. In pratica, il contatto deve ridurre l’energia potenziale totale
+                    e generare una configurazione abbastanza robusta da resistere a vibrazioni, urti e variazioni
+                    locali del moto.
+                </p>
+                <p>
+                    Questo concetto è importante perché permette di distinguere tra un aggancio momentaneo
+                    e un aggancio realmente stabile e utilizzabile nella dinamica dello sciame.
+                </p>
+
+                <div class="formula-box">
+                    <div class="formula">U = - m · B</div>
+                    <div class="formula-desc">Energia potenziale magnetica in forma semplificata</div>
+                    <div class="formula-legend">
+                        <div class="legend-item"><span class="var">U</span><span class="def">Energia potenziale</span></div>
+                        <div class="legend-item"><span class="var">m</span><span class="def">Momento magnetico</span></div>
+                        <div class="legend-item"><span class="var">B</span><span class="def">Campo magnetico</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="em-block reveal stagger-4">
+                <div class="em-block-header">
+                    <span class="em-block-num">PH.05</span>
+                    <h3>Isteresi e Zona di Stabilità</h3>
+                </div>
+                <p>
+                    In un sistema reale non conviene usare una sola soglia per decidere aggancio e distacco.
+                    È molto più stabile definire una soglia di attach e una soglia di detach separate,
+                    così da evitare oscillazioni continue quando i MicroBot si trovano vicini al limite operativo.
+                </p>
+                <p>
+                    Questa logica di isteresi è fondamentale per rendere il comportamento del sistema più robusto
+                    sia nella simulazione sia nell’implementazione embedded.
+                </p>
+
+                <div class="formula-box">
+                    <div class="formula">d_attach &lt; d &lt; d_detach</div>
+                    <div class="formula-desc">Intervallo di stabilità per aggancio e mantenimento</div>
+                    <div class="formula-legend">
+                        <div class="legend-item"><span class="var">d_attach</span><span class="def">Soglia di aggancio</span></div>
+                        <div class="legend-item"><span class="var">d_detach</span><span class="def">Soglia di distacco</span></div>
+                        <div class="legend-item"><span class="var">d</span><span class="def">Distanza istantanea</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-dark" id="patterns">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">12 — Behavior Patterns</div>
+                <h2 class="section-title">Comportamenti emergenti dello sciame.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                I MicroBot possono organizzarsi in pattern collettivi attraverso regole locali,
+                interazioni magnetiche e controllo centralizzato. Ogni configurazione rappresenta
+                un diverso equilibrio tra ordine, flessibilità e adattamento.
+            </p>
+        </div>
+
+        <div class="patterns-container">
+            <div class="patterns-grid">
+                <div class="pattern-card reveal stagger-1" data-hover>
+                    <div class="pattern-name">Circle</div>
+                    <p>
+                        I bot si dispongono lungo una circonferenza mantenendo distanza uniforme,
+                        utile per stabilità e distribuzione spaziale.
+                    </p>
+                </div>
+
+                <div class="pattern-card reveal stagger-2" data-hover>
+                    <div class="pattern-name">Vortex</div>
+                    <p>
+                        Movimento rotazionale attorno a un centro dinamico. Il sistema genera
+                        flussi circolari che simulano dinamiche fluide.
+                    </p>
+                </div>
+
+                <div class="pattern-card reveal stagger-3" data-hover>
+                    <div class="pattern-name">Wave</div>
+                    <p>
+                        Propagazione di un’onda lungo lo sciame. I bot seguono una fase
+                        sincronizzata creando pattern oscillatori.
+                    </p>
+                </div>
+
+                <div class="pattern-card reveal stagger-4" data-hover>
+                    <div class="pattern-name">Line</div>
+                    <p>
+                        Allineamento lungo una direzione principale. Utile per trasporto,
+                        scansione o configurazioni strutturate.
+                    </p>
+                </div>
+
+                <div class="pattern-card reveal stagger-5" data-hover>
+                    <div class="pattern-name">Boids</div>
+                    <p>
+                        Comportamento ispirato agli stormi naturali: separazione, allineamento
+                        e coesione generano movimento collettivo autonomo.
+                    </p>
+                </div>
+
+                <div class="pattern-card reveal stagger-6" data-hover>
+                    <div class="pattern-name">Spiral</div>
+                    <p>
+                        Distribuzione a spirale con espansione o compressione dinamica,
+                        utile per esplorazione o raccolta.
+                    </p>
+                </div>
+
+                <div class="pattern-card reveal stagger-7" data-hover>
+                    <div class="pattern-name">Figure-8</div>
+                    <p>
+                        Traiettoria complessa che combina due orbite. Serve per testare
+                        stabilità e coordinamento avanzato.
+                    </p>
+                </div>
+
+                <div class="pattern-card reveal stagger-8" data-hover>
+                    <div class="pattern-name">Grid</div>
+                    <p>
+                        Struttura discreta a griglia. Ideale per configurazioni modulari,
+                        docking e costruzione di forme più complesse.
+                    </p>
+                </div>
+            </div>
+
+            <div class="patterns-info reveal">
+                <h3>Logica di Generazione</h3>
+
+                <p>
+                    Ogni pattern emerge dalla combinazione di regole locali e controllo globale.
+                    Parametri come distanza target, forza di interazione, rigidità (W) e velocità
+                    determinano il comportamento finale dello sciame.
+                </p>
+
+                <p>
+                    La transizione tra pattern può avvenire in tempo reale, permettendo al sistema
+                    di adattarsi dinamicamente a nuovi obiettivi senza ricostruire completamente
+                    la configurazione dei MicroBot.
+                </p>
+
+                <div class="patterns-stats">
+                    <div class="patterns-stat">
+                        <div class="patterns-stat-value">8</div>
+                        <div class="patterns-stat-label">Pattern Base</div>
+                    </div>
+
+                    <div class="patterns-stat">
+                        <div class="patterns-stat-value">∞</div>
+                        <div class="patterns-stat-label">Varianti</div>
+                    </div>
+
+                    <div class="patterns-stat">
+                        <div class="patterns-stat-value">&lt;1s</div>
+                        <div class="patterns-stat-label">Switch Time</div>
+                    </div>
+
+                    <div class="patterns-stat">
+                        <div class="patterns-stat-value">Real-time</div>
+                        <div class="patterns-stat-label">Control</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="sensors">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">13 — Sensor Fusion</div>
+                <h2 class="section-title">Integrazione multi-sensoriale del sistema.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                Il controllo efficace dei MicroBot richiede la combinazione di dati provenienti da visione artificiale,
+                IMU, telemetria di rete e misure magnetiche. La fusione sensoriale migliora precisione,
+                robustezza e stabilità del comportamento collettivo.
+            </p>
+        </div>
+
+        <div class="fusion-topbar reveal stagger-2">
+    <div class="fusion-topbar-left">
+        <div class="fusion-chip fusion-chip-live">
+            <span class="fusion-chip-dot"></span>
+            FUSION ONLINE
+        </div>
+
+        <div class="fusion-chip" id="fusionModeLabel">
+            MODE: ADAPTIVE
+        </div>
+
+        <div class="fusion-chip" id="fusionConfidenceLabel">
+            CONFIDENCE: 0.92
+        </div>
+    </div>
+
+    <div class="fusion-topbar-right">
+        <div class="fusion-overview-stat">
+            <span class="fusion-overview-label">INPUTS</span>
+            <span class="fusion-overview-value">3</span>
+        </div>
+
+        <div class="fusion-overview-stat">
+            <span class="fusion-overview-label">LATENCY</span>
+            <span class="fusion-overview-value" id="fusionLatencyLabel">12 ms</span>
+        </div>
+
+        <div class="fusion-overview-stat">
+            <span class="fusion-overview-label">STATE</span>
+            <span class="fusion-overview-value" id="fusionStateLabel">STABLE</span>
+        </div>
+    </div>
+</div>
+
+        <div class="sensor-fusion-grid">
+            <div class="sensor-panel reveal stagger-1">
+                <div class="sensor-panel-header">
+                    <span class="sensor-icon">📷</span>
+                    <span class="sensor-name">Camera Tracking</span>
+                    <span class="sensor-status active">120 FPS</span>
+                </div>
+                <canvas class="sensor-canvas" id="sensorCameraCanvas"></canvas>
+                <div class="sensor-metrics">
+                    <div class="sensor-metric">
+                        <span class="metric-label">Precision</span>
+                        <span class="metric-value">0.1mm</span>
+                    </div>
+                    <div class="sensor-metric">
+                        <span class="metric-label">Coverage</span>
+                        <span class="metric-value">1.2m²</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sensor-panel reveal stagger-2">
+                <div class="sensor-panel-header">
+                    <span class="sensor-icon">📐</span>
+                    <span class="sensor-name">IMU Orientation</span>
+                    <span class="sensor-status active">200 Hz</span>
+                </div>
+                <canvas class="sensor-canvas" id="sensorIMUCanvas"></canvas>
+                <div class="sensor-metrics">
+                    <div class="sensor-metric">
+                        <span class="metric-label">Roll</span>
+                        <span class="metric-value" id="imuRoll">0.0°</span>
+                    </div>
+                    <div class="sensor-metric">
+                        <span class="metric-label">Pitch</span>
+                        <span class="metric-value" id="imuPitch">0.0°</span>
+                    </div>
+                    <div class="sensor-metric">
+                        <span class="metric-label">Yaw</span>
+                        <span class="metric-value" id="imuYaw">0.0°</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sensor-panel reveal stagger-3">
+                <div class="sensor-panel-header">
+                    <span class="sensor-icon">🧲</span>
+                    <span class="sensor-name">Magnetic Field</span>
+                    <span class="sensor-status active">100 Hz</span>
+                </div>
+                <canvas class="sensor-canvas" id="sensorMagCanvas"></canvas>
+                <div class="sensor-metrics">
+                    <div class="sensor-metric">
+                        <span class="metric-label">Bx</span>
+                        <span class="metric-value" id="magBx">0.0 mT</span>
+                    </div>
+                    <div class="sensor-metric">
+                        <span class="metric-label">By</span>
+                        <span class="metric-value" id="magBy">0.0 mT</span>
+                    </div>
+                    <div class="sensor-metric">
+                        <span class="metric-label">|B|</span>
+                        <span class="metric-value" id="magB">0.0 mT</span>
+                    </div>
+                </div>
+            </div>
+
+<div class="sensor-panel fusion reveal stagger-4">
+    <div class="sensor-panel-header">
+        <span class="sensor-icon">🔮</span>
+        <span class="sensor-name">Sensor Fusion</span>
+        <span class="sensor-status active" id="fusionStatusBadge">OPTIMAL</span>
+    </div>
+
+    <div class="fusion-panel-shell">
+        <div class="fusion-flow-lines">
+            <span class="fusion-flow-line line-camera"></span>
+            <span class="fusion-flow-line line-imu"></span>
+            <span class="fusion-flow-line line-mag"></span>
+        </div>
+
+        <canvas class="sensor-canvas fusion-canvas-main" id="sensorFusionCanvas"></canvas>
+
+        <div class="fusion-core-badge">
+            <span class="fusion-core-title">Adaptive Fusion Engine</span>
+            <span class="fusion-core-subtitle">Weighted sensor blending + filtered state estimate</span>
+        </div>
+    </div>
+
+    <div class="sensor-metrics fusion-metrics-extended">
+        <div class="sensor-metric">
+            <span class="metric-label">X</span>
+            <span class="metric-value" id="fusionX">0.00</span>
+        </div>
+
+        <div class="sensor-metric">
+            <span class="metric-label">Y</span>
+            <span class="metric-value" id="fusionY">0.00</span>
+        </div>
+
+        <div class="sensor-metric">
+            <span class="metric-label">σ</span>
+            <span class="metric-value" id="fusionSigma">0.05mm</span>
+        </div>
+
+        <div class="sensor-metric fusion-weight-card">
+            <span class="metric-label">Camera Weight</span>
+            <span class="metric-value" id="weightCamera">0.52</span>
+        </div>
+
+        <div class="sensor-metric fusion-weight-card">
+            <span class="metric-label">IMU Weight</span>
+            <span class="metric-value" id="weightIMU">0.31</span>
+        </div>
+
+        <div class="sensor-metric fusion-weight-card">
+            <span class="metric-label">Mag Weight</span>
+            <span class="metric-value" id="weightMag">0.17</span>
+        </div>
+    </div>
+</div>
+        </div>
+
+        <div class="kalman-viz reveal">
+            <h3>Stima dello stato</h3>
+            <canvas id="kalmanCanvas"></canvas>
+            <div class="kalman-legend">
+                <div class="kalman-item"><span class="dot measurement"></span>Measurement</div>
+                <div class="kalman-item"><span class="dot prediction"></span>Prediction</div>
+                <div class="kalman-item"><span class="dot estimate"></span>Estimate</div>
+                <div class="kalman-item"><span class="dot uncertainty"></span>Uncertainty</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="fusion-diagnostics reveal stagger-3">
+    <div class="fusion-diagnostics-header">
+        <h3>Diagnostics Stream</h3>
+        <span class="fusion-diagnostics-badge">LIVE</span>
+    </div>
+
+    <div class="fusion-log" id="fusionLog">
+        <div class="fusion-log-line">[00:00:00] Fusion engine initialized</div>
+        <div class="fusion-log-line">[00:00:01] Camera tracking locked</div>
+        <div class="fusion-log-line">[00:00:01] IMU synchronization stable</div>
+        <div class="fusion-log-line">[00:00:02] Magnetic heading calibrated</div>
+    </div>
+</div>
+
+    <section class="section-dark" id="bom">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">14 — Bill of Materials</div>
+                <h2 class="section-title">Stima dei costi del sistema.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                Il progetto MicroBot è pensato per essere modulare anche dal punto di vista economico.
+                Il costo totale dipende dal numero di unità, dalla qualità dei componenti e dalla presenza
+                di moduli aggiuntivi come tracking, controller, sensori e interfacce avanzate.
+            </p>
+        </div>
+
+        <div class="bom-container">
+            <div class="bom-main">
+                <div class="bom-controls reveal-left">
+                    <h4>Configurazione</h4>
+
+                    <div class="panel-group">
+                        <label>Numero MicroBot</label>
+                        <input type="range" id="bomBotCount" min="1" max="64" value="12" />
+                        <div class="panel-range-values">
+                            <span>1</span>
+                            <strong id="bomBotCountValue">12 bot</strong>
+                            <span>64</span>
+                        </div>
+                    </div>
+
+                    <div class="panel-group">
+                        <label>Qualità componenti</label>
+                        <input type="range" id="bomQuality" min="1" max="3" value="2" />
+                        <div class="panel-range-values">
+                            <span>Budget</span>
+                            <strong id="bomQualityValue">Standard</strong>
+                            <span>Premium</span>
+                        </div>
+                    </div>
+
+                    <div class="bom-checks">
+                        <label>
+                            <input type="checkbox" id="bomController" checked />
+                            Controller centrale
+                        </label>
+
+                        <label>
+                            <input type="checkbox" id="bomTracking" checked />
+                            Sistema di tracking
+                        </label>
+
+                        <label>
+                            <input type="checkbox" id="bomIMU" />
+                            Interfaccia IMU / wristband
+                        </label>
+
+                        <label>
+                            <input type="checkbox" id="bomCharging" />
+                            Base di ricarica
+                        </label>
+
+                        <label>
+                            <input type="checkbox" id="bomVR" />
+                            Layer VR / AR
+                        </label>
+                    </div>
+                </div>
+
+                <div class="bom-result reveal-right">
+                    <div class="bom-title">Costo Totale Stimato</div>
+                    <div class="bom-total" id="bomTotal">€212</div>
+                    <div class="bom-breakdown" id="bomBreakdown">
+                        12 MicroBot + controller + tracking system
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-dark" id="roadmap">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">11 — Roadmap</div>
+                <h2 class="section-title">Evoluzione progressiva del progetto.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                MicroBot cresce per fasi incrementali: dalla simulazione e documentazione iniziale
+                fino al prototipo fisico, al tracking avanzato e a un ecosistema di swarm robotics
+                sempre più autonomo e coordinato.
+            </p>
+        </div>
+
+        <div class="roadmap-container">
+            <div class="roadmap-timeline">
+                <div class="roadmap-item active reveal stagger-1">
+                    <div class="roadmap-header">
+                        <h3>v0.1 — Foundation</h3>
+                        <span class="roadmap-tag">Concept</span>
+                    </div>
+                    <p>
+                        Definizione della visione generale del progetto, architettura concettuale,
+                        prime scelte sui componenti, struttura del controller centrale e impostazione
+                        del sistema come ecosistema modulare e non come semplice prototipo isolato.
+                    </p>
+                </div>
+
+                <div class="roadmap-item reveal stagger-2">
+                    <div class="roadmap-header">
+                        <h3>v0.2 — Simulation & Logic</h3>
+                        <span class="roadmap-tag">Software</span>
+                    </div>
+                    <p>
+                        Sviluppo delle prime simulazioni comportamentali, pattern di movimento,
+                        logica di coordinamento, gestione stati e test su rappresentazioni semplificate
+                        dei bot per validare il comportamento collettivo prima dell’hardware reale.
+                    </p>
+                </div>
+
+                <div class="roadmap-item reveal stagger-3">
+                    <div class="roadmap-header">
+                        <h3>v0.3 — LED Physical Demo</h3>
+                        <span class="roadmap-tag">Prototype</span>
+                    </div>
+                    <p>
+                        Realizzazione di una demo fisica con LED e microcontrollore per rappresentare
+                        i MicroBot in forma elementare. Questa fase serve a trasformare la logica simulata
+                        in un sistema osservabile, controllabile e documentabile in modo concreto.
+                    </p>
+                </div>
+
+                <div class="roadmap-item reveal stagger-4">
+                    <div class="roadmap-header">
+                        <h3>v0.4 — Electromagnetic Layer</h3>
+                        <span class="roadmap-tag">Physics</span>
+                    </div>
+                    <p>
+                        Studio e integrazione del livello elettromagnetico: bobine, magneti permanenti,
+                        logica di attrazione e repulsione, soglie di aggancio, isteresi e analisi
+                        delle condizioni fisiche necessarie per docking stabile e riconfigurazione.
+                    </p>
+                </div>
+
+                <div class="roadmap-item reveal stagger-5">
+                    <div class="roadmap-header">
+                        <h3>v0.5 — Vision Tracking</h3>
+                        <span class="roadmap-tag">Tracking</span>
+                    </div>
+                    <p>
+                        Introduzione del sistema di visione artificiale per tracciare posizione,
+                        stato e traiettoria dei moduli. In questa fase il progetto passa da una
+                        logica puramente locale a un sistema osservabile in tempo reale con feedback esterno.
+                    </p>
+                </div>
+
+                <div class="roadmap-item reveal stagger-6">
+                    <div class="roadmap-header">
+                        <h3>v0.6 — Networked Swarm</h3>
+                        <span class="roadmap-tag">ESP-NOW</span>
+                    </div>
+                    <p>
+                        Implementazione della comunicazione tra controller e bot tramite rete wireless
+                        a bassa latenza, con heartbeat, telemetria, sincronizzazione e distribuzione
+                        dei comandi per pattern, configurazioni e gestione errori.
+                    </p>
+                </div>
+
+                <div class="roadmap-item reveal">
+                    <div class="roadmap-header">
+                        <h3>v0.7 — 3D Structure & Embedded Integration</h3>
+                        <span class="roadmap-tag">Hardware</span>
+                    </div>
+                    <p>
+                        Progettazione strutturale del MicroBot reale con involucro 3D, integrazione
+                        di elettronica, alimentazione, bobine, magneti e indicatori di stato.
+                        L’obiettivo è passare da demo semplificata a nodo fisico compatto e replicabile.
+                    </p>
+                </div>
+
+                <div class="roadmap-item reveal">
+                    <div class="roadmap-header">
+                        <h3>v0.8 — Human Interface Layer</h3>
+                        <span class="roadmap-tag">UI / VR</span>
+                    </div>
+                    <p>
+                        Sviluppo di un’interfaccia avanzata per il controllo dello sciame:
+                        dashboard, visualizzazione dei dati, comandi ad alto livello, gesture,
+                        sensori IMU e possibili estensioni VR/AR per interazione immersiva.
+                    </p>
+                </div>
+
+                <div class="roadmap-item reveal">
+                    <div class="roadmap-header">
+                        <h3>v1.0 — Integrated Ecosystem</h3>
+                        <span class="roadmap-tag">Release</span>
+                    </div>
+                    <p>
+                        Consolidamento dell’ecosistema completo: simulazione, firmware, tracking,
+                        rete, controllo magnetico, documentazione tecnica e prototipo fisico
+                        convergono in una piattaforma unica, estendibile e pronta per evoluzioni future.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-dark investment-section" id="investimento">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">15 — Investor Control Room</div>
+                <h2 class="section-title">Dalla demo scenica alla prova operativa.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                Il sito dimostrativo resta il centro della presentazione. Il dashboard MicroBot Labs viene integrato
+                come livello di evidenza: comandi, telemetria simulata, nodi, gesture control, log e documentazione
+                tecnica sono raccolti in una control room separata, pronta per valutazioni, pitch e sviluppo hardware.
+            </p>
+        </div>
+
+        <div class="investment-grid">
+            <div class="investment-copy reveal-left">
+                <span class="investment-kicker">Merged package</span>
+                <h3>Sito dimostrativo + dashboard operativo.</h3>
+                <p>
+                    Questa versione unisce il linguaggio visuale di MicroBot ULTRA con il dashboard v0.3:
+                    il primo racconta la visione, il secondo mostra come il sistema può essere controllato,
+                    misurato e validato anche in modalità pre-hardware.
+                </p>
+                <div class="investment-points">
+                    <span>Demo immersiva mantenuta</span>
+                    <span>Dashboard separato integrato</span>
+                    <span>Documentazione e BOM inclusi</span>
+                    <span>Pronto per GitHub Pages</span>
+                </div>
+                <div class="investment-actions">
+                    <a href="dashboard/index.html" class="btn-primary" data-hover><span>Apri dashboard completa</span></a>
+                    <a href="docs/business/README.md" class="btn-secondary" data-hover>Business docs</a>
+                </div>
+            </div>
+
+            <div class="investment-preview reveal-right">
+                <div class="investment-preview-bar">
+                    <span></span><span></span><span></span>
+                    <strong>MicroBot Labs Dashboard</strong>
+                </div>
+                <iframe
+                    src="dashboard/index.html"
+                    title="MicroBot Labs Dashboard preview"
+                    loading="lazy"
+                ></iframe>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact">
+        <div class="section-header">
+            <div class="reveal">
+                <div class="section-label">16 — Join the Project</div>
+                <h2 class="section-title">Entra nel sistema MicroBot.</h2>
+            </div>
+            <p class="section-desc reveal stagger-1">
+                MicroBot non è solo un progetto visuale: è un percorso verso prototipo fisico, dashboard,
+                validazione tecnica e narrativa d'investimento. Questo è il punto di ingresso per seguire,
+                valutare o supportare lo sviluppo.
+            </p>
+        </div>
+
+        <div class="contact-container">
+            <div class="contact-main">
+                <div class="contact-card reveal-left">
+                    <h3>Contatto diretto</h3>
+
+                    <p>
+                        Se sei interessato al progetto, vuoi collaborare o hai idee da sviluppare insieme,
+                        puoi scrivere direttamente. MicroBot è aperto a nuove menti e approcci diversi.
+                    </p>
+
+                    <form class="contact-form">
+                        <input type="text" placeholder="Nome" required />
+                        <input type="email" placeholder="Email" required />
+                        <textarea placeholder="Messaggio..." rows="5" required></textarea>
+
+                        <button type="submit" class="contact-btn">
+                            Invia messaggio
+                        </button>
+                    </form>
+                </div>
+
+                <div class="contact-side reveal-right">
+                    <h3>Accesso al sistema</h3>
+
+                    <div class="contact-actions">
+                        <a href="https://github.com/AntonMorosi06/sito-investimento" class="contact-link">GitHub Repository</a>
+                        <a href="docs/current_status.md" class="contact-link">Documentazione</a>
+                        <a href="dashboard/index.html" class="contact-link">Dashboard completa</a>
+                    </div>
+
+                    <div class="contact-stats">
+                        <div class="contact-stat">
+                            <div class="contact-stat-value">v0.5+</div>
+                            <div class="contact-stat-label">Current Version</div>
+                        </div>
+
+                        <div class="contact-stat">
+                            <div class="contact-stat-value">Active</div>
+                            <div class="contact-stat-label">Development</div>
+                        </div>
+
+                        <div class="contact-stat">
+                            <div class="contact-stat-value">Open</div>
+                            <div class="contact-stat-label">Collaboration</div>
+                        </div>
+                    </div>
+
+                    <p class="contact-note">
+                        Il sistema è in continua evoluzione. Le idee contano più della perfezione iniziale.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <button class="back-to-top" id="backToTop" aria-label="Back to top">
+        <svg viewBox="0 0 24 24">
+            <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+    </button>
+
+    <div class="toast" id="toast"></div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="foot-logo">
+                    <span class="ld"></span>
+                    Micro<em>Bot</em>
+                </div>
+                <p>
+                    Ecosistema avanzato di robotica modulare, swarm intelligence, controllo embedded,
+                    simulazione fisica e interfacce interattive.
+                </p>
+            </div>
+
+            <div class="footer-col">
+                <h5>Navigation</h5>
+                <ul>
+                    <li><a href="#hero">Home</a></li>
+                    <li><a href="#dashboard">Dashboard</a></li>
+                    <li><a href="#investimento">Investment</a></li>
+                    <li><a href="#simulation">Simulation</a></li>
+                    <li><a href="#network">Network</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h5>System</h5>
+                <ul>
+                    <li><a href="#tracking">Tracking</a></li>
+                    <li><a href="#electromagnetism">Electromagnetism</a></li>
+                    <li><a href="#viewer3d">3D Viewer</a></li>
+                    <li><a href="#physics">Physics</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h5>Project</h5>
+                <ul>
+                    <li><a href="#patterns">Patterns</a></li>
+                    <li><a href="#sensors">Sensors</a></li>
+                    <li><a href="#bom">BOM</a></li>
+                    <li><a href="#roadmap">Roadmap</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <span>© 2026 MicroBot ULTRA — All rights reserved.</span>
+            <div class="footer-socials">
+                <a href="https://github.com/AntonMorosi06/sito-investimento" aria-label="GitHub">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77 5.44 5.44 0 0 0 3.5 8.5c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+<script type="module" src="js/login-gate.js"></script>
+<script type="module" src="js/tracking.js"></script>
+<script type="module" src="js/ar-lab.js"></script>
+<script src="js/main.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/simulations.js"></script>
+<script src="js/network.js"></script>
+<script src="js/viewer3d.js"></script>
+<script src="js/energy.js"></script>
+<script src="js/swarm-mesh.js"></script>
+<script src="js/sensors.js"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+flowchart TB
+    subgraph Physical["Physical v0.4 Minimum Kit"]
+        Board["ESP32 DevKit\nNODE_00_MASTER target"]
+        Cable["USB data cable"]
+        Breadboard["Breadboard"]
+        LED["LED + resistor kit\nNODE_01 preparation"]
+        Meter["Basic multimeter"]
+    end
+
+    subgraph Firmware["Firmware Layer"]
+        FirmwareNode00["NODE_00_MASTER.ino\nboot + heartbeat + status"]
+        FutureNode01["NODE_01_LED_STATE\nnext physical output"]
+    end
+
+    subgraph Host["Host / Mac Layer"]
+        Upload["Arduino IDE / ESP32 Core\nfirmware upload"]
+        Capture["capture_real_esp32_node00_master_v0_4.py"]
+        Validate["validate_real_esp32_node00_master_v0_4.py"]
+    end
+
+    subgraph Evidence["Evidence Output"]
+        Raw["raw serial .txt"]
+        JSONL["parsed .jsonl"]
+        Report["validation report .md"]
+        Summary["summary .json"]
+    end
+
+    Cable --> Board
+    Upload --> FirmwareNode00
+    FirmwareNode00 --> Board
+    Board --> Capture
+    Capture --> Raw
+    Capture --> JSONL
+    JSONL --> Validate
+    Validate --> Report
+    Validate --> Summary
+    Breadboard -.next step.-> FutureNode01
+    LED -.next step.-> FutureNode01
+    Meter -.safe checks.-> Board
+
+    classDef physical fill:#111827,stroke:#d1d5db,color:#ffffff;
+    classDef firmware fill:#1e293b,stroke:#93c5fd,color:#ffffff;
+    classDef host fill:#172554,stroke:#bfdbfe,color:#ffffff;
+    classDef evidence fill:#3b2f14,stroke:#fde68a,color:#ffffff;
+
+    class Board,Cable,Breadboard,LED,Meter physical;
+    class FirmwareNode00,FutureNode01 firmware;
+    class Upload,Capture,Validate host;
+    class Raw,JSONL,Report,Summary evidence;

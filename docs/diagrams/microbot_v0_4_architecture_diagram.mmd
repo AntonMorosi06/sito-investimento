@@ -1,0 +1,35 @@
+flowchart LR
+    User["User / Operator"]
+    Mac["Mac / PC Controller"]
+    Web["Web Dashboard\nSidebar + Nodes + Telemetry + Data Center"]
+    Docs["Documentation Viewer\nReference Base + Evidence"]
+    OS["MicroBot OS Console\nBrowser-side OS mock"]
+    Gesture["Gesture Lab\nBrowser hand input"]
+    Drone["Drone Perimeter Preview\nRoom map simulation"]
+    Serial["Serial Capture Tools\npyserial capture + validation"]
+    ESP32["NODE_00_MASTER\nReal ESP32 target"]
+    Nodes["Planned MicroBot Nodes\nNODE_01..NODE_06"]
+    Evidence["Evidence Artifacts\nlogs + JSONL + reports"]
+    V04["v0.4 Target\nReal serial validation"]
+
+    User --> Mac
+    Mac --> Web
+    Web --> Docs
+    Web --> OS
+    Web --> Gesture
+    Web --> Drone
+    Mac --> Serial
+    Serial --> ESP32
+    ESP32 -.future protocol.-> Nodes
+    Serial --> Evidence
+    Evidence --> V04
+
+    classDef prepared fill:#101820,stroke:#ffffff,color:#ffffff;
+    classDef simulated fill:#1f2937,stroke:#94a3b8,color:#ffffff;
+    classDef hardware fill:#263f1f,stroke:#a7f3d0,color:#ffffff;
+    classDef evidence fill:#3b2f14,stroke:#facc15,color:#ffffff;
+
+    class User,Mac,Web,Docs,OS,Gesture,Drone prepared;
+    class Nodes simulated;
+    class Serial,ESP32 hardware;
+    class Evidence,V04 evidence;

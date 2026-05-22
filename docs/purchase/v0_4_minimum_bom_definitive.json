@@ -1,0 +1,99 @@
+{
+  "project": "MicroBot Labs",
+  "milestone": "v0.4",
+  "target": "real ESP32 NODE_00_MASTER serial validation",
+  "hardware_validation_status": "not hardware-validated",
+  "budget_eur": {
+    "absolute_minimum": "10-35",
+    "recommended_minimum": "35-80",
+    "safe_minimum": "60-130"
+  },
+  "recommended_cart": [
+    {
+      "id": "esp32_dev_board",
+      "name": "ESP32 development board, ESP32 DevKit / ESP32-WROOM-32 style",
+      "quantity": 2,
+      "required": true,
+      "estimated_budget_eur": "12-30",
+      "purpose": "NODE_00_MASTER real serial validation and backup board"
+    },
+    {
+      "id": "usb_data_cable",
+      "name": "USB data cable matching board connector",
+      "quantity": 2,
+      "required": true,
+      "estimated_budget_eur": "8-20",
+      "purpose": "Upload, power and serial capture"
+    },
+    {
+      "id": "breadboard",
+      "name": "Breadboard, 400 or 830 tie-points",
+      "quantity": 1,
+      "required": true,
+      "estimated_budget_eur": "4-10",
+      "purpose": "NODE_01 LED/state and future wiring"
+    },
+    {
+      "id": "jumper_male_male",
+      "name": "Jumper wires M-M kit",
+      "quantity": 1,
+      "required": true,
+      "estimated_budget_eur": "3-8",
+      "purpose": "Breadboard wiring"
+    },
+    {
+      "id": "jumper_mixed",
+      "name": "Jumper wires M-F/F-F kit",
+      "quantity": 1,
+      "required": false,
+      "estimated_budget_eur": "4-10",
+      "purpose": "Sensor/module wiring"
+    },
+    {
+      "id": "led_assortment",
+      "name": "LED assortment, 3mm or 5mm",
+      "quantity": 1,
+      "required": true,
+      "estimated_budget_eur": "3-8",
+      "purpose": "NODE_01_LED_STATE physical output"
+    },
+    {
+      "id": "resistor_kit",
+      "name": "Resistor kit including 220 ohm, 330 ohm, 1k and 10k",
+      "quantity": 1,
+      "required": true,
+      "estimated_budget_eur": "4-10",
+      "purpose": "LED current limiting and basic input tests"
+    },
+    {
+      "id": "digital_multimeter",
+      "name": "Basic digital multimeter",
+      "quantity": 1,
+      "required": false,
+      "strongly_recommended": true,
+      "estimated_budget_eur": "10-25",
+      "purpose": "Voltage, resistor and continuity checks"
+    },
+    {
+      "id": "mac_usb_adapter",
+      "name": "Mac-compatible USB adapter or hub",
+      "quantity": 1,
+      "required": false,
+      "estimated_budget_eur": "8-25",
+      "purpose": "Only if needed for the selected board/cable"
+    }
+  ],
+  "do_not_buy_yet": [
+    "drone frame",
+    "motors",
+    "ESC",
+    "LiPo batteries",
+    "electromagnets",
+    "MOSFET coil drivers",
+    "ESP32-CAM",
+    "OLED display",
+    "custom PCB",
+    "3D printed shell"
+  ],
+  "evidence_boundary": "This BOM makes the repository purchase-ready. It does not mean hardware has been validated."
+}

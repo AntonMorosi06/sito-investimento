@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MicroBot Labs Web App v0.3 — Control / Data / Evidence</title>
+  <meta name="description" content="MicroBot investor control dashboard: six-node pre-hardware demo, command controls, telemetry, evidence discipline and future ESP32 Web Serial path.">
+  <link rel="icon" href="../assets/icons/microbot-investimento.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="background-grid" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand-block">
+      <a class="back-home" href="../index.html">← Back to MicroBot ULTRA</a>
+      <p class="eyebrow">MicroBot Labs / Investor Control Room / v0.3</p>
+      <h1>MicroBot Control Dashboard</h1>
+      <p class="subtitle">
+        Pre-hardware control surface for NODE_00_MASTER and the six planned MicroBot nodes.
+        This dashboard turns the visual demo into evidence: commands, telemetry, logs, safety states
+        and documentation links stay visible for review.
+      </p>
+
+      <div class="status-ribbon" aria-label="Current project maturity">
+        <span class="ribbon-chip info">v0.3 PRE-HARDWARE</span>
+        <span class="ribbon-chip simulated">PRE_HARDWARE_SIMULATED</span>
+        <span class="ribbon-chip warning">NOT HARDWARE-VALIDATED</span>
+        <span class="ribbon-chip ready">SIX NODE MOCK ACTIVE</span>
+      </div>
+    </div>
+
+    <div class="top-actions" aria-label="Dashboard actions">
+      <button id="btnMockConnect">Start Offline Mock</button>
+      <button id="btnCombinedDemo" class="secondary">Combined Demo</button>
+      <button id="btnSwarmSweep" class="secondary">Swarm Sweep</button>
+      <button id="btnAllActive" class="secondary">All Active</button>
+      <button id="btnAllIdle" class="secondary">All Idle</button>
+      <button id="btnLoadFixture" class="secondary">Load NODE_00 Fixture</button>
+      <button id="btnWebSerial" class="secondary hardware">Web Serial Hardware Only</button>
+      <button id="btnExportLog" class="secondary">Export Log</button>
+      <button id="btnClear" class="secondary">Clear Log</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="panel hero-panel">
+      <div class="panel-header">
+        <div>
+          <p class="section-kicker">System state</p>
+          <h2>Live Control Surface</h2>
+        </div>
+        <span id="evidenceBadge" class="status-pill simulated">OFFLINE MOCK</span>
+      </div>
+
+      <div class="system-grid">
+        <div class="metric">
+          <span>Connection</span>
+          <strong id="connectionState">DISCONNECTED</strong>
+        </div>
+        <div class="metric">
+          <span>Master</span>
+          <strong id="masterState">UNKNOWN</strong>
+        </div>
+        <div class="metric">
+          <span>Safety</span>
+          <strong id="safetyState">UNKNOWN</strong>
+        </div>
+        <div class="metric">
+          <span>Mode</span>
+          <strong id="operationMode">LOCAL DASHBOARD</strong>
+        </div>
+      </div>
+
+      <div class="command-panel">
+        <div class="panel-header compact">
+          <h2>Master / Global Commands</h2>
+          <p class="inline-note">Global commands route to NODE_00_MASTER or fan out to all six simulated nodes.</p>
+        </div>
+
+        <div class="button-row">
+          <button data-command="PING">PING</button>
+          <button data-command="STATUS">STATUS</button>
+          <button data-command="GET_NODE_TABLE">GET_NODE_TABLE</button>
+          <button data-command="SCAN_NODES">SCAN_NODES</button>
+          <button data-command="ALL_ACTIVE">ALL_ACTIVE</button>
+          <button data-command="ALL_IDLE">ALL_IDLE</button>
+          <button data-command="SWARM_SWEEP">SWARM_SWEEP</button>
+          <button data-command="MISSION_DEMO">MISSION_DEMO</button>
+          <button data-command="STOP" class="warning">STOP</button>
+          <button data-command="EMERGENCY_STOP" class="danger">EMERGENCY_STOP</button>
+          <button data-command="RESET">RESET</button>
+        </div>
+
+        <div class="manual-command">
+          <label for="manualCommand">Manual command</label>
+          <div class="manual-row">
+            <input id="manualCommand" type="text" value="NODE_03 DOCK" autocomplete="off">
+            <button id="btnSendManual" class="secondary">Send</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel evidence-panel">
+      <div class="panel-header">
+        <div>
+          <p class="section-kicker">Evidence discipline</p>
+          <h2>Current Truth</h2>
+        </div>
+      </div>
+
+      <div class="truth-list">
+        <div class="truth-item good">
+          <strong>All six nodes controllable</strong>
+          <span>Each node has simulated state transitions and visual behavior in the dashboard.</span>
+        </div>
+        <div class="truth-item caution">
+          <strong>Still pre-hardware</strong>
+          <span>No physical ESP32 node or real swarm has been validated by this screen.</span>
+        </div>
+        <div class="truth-item info">
+          <strong>Next real proof</strong>
+          <span>Upload NODE_00/NODE_01 firmware, capture serial evidence, then extend to nodes 02–06.</span>
+        </div>
+      </div>
+
+      <div class="link-grid">
+        <a href="../docs/current_evidence_v0_3.md">Current Evidence</a>
+        <a href="../docs/andrea_onboarding/README.md">Andrea Map</a>
+        <a href="../docs/dashboard_parser_validation_notes_v0_3.md">Parser Notes</a>
+        <a href="../docs/node_00_master_real_serial_validation_v0_3.md">NODE_00 Hardware Plan</a>
+        <a href="../docs/node_01_led_state_pre_hardware_simulation_v0_3.md">NODE_01 Simulation</a>
+        <a href="../docs/purchase/minimum_bom_amazon_search_list_v0_3.md">Minimum BOM</a>
+      </div>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-header">
+        <div>
+          <p class="section-kicker">Six node controls</p>
+          <h2>Per-Node Command Matrix</h2>
+        </div>
+        <span class="inline-note">Every planned node can be activated, idled, warned, errored, stopped and reset in simulation.</span>
+      </div>
+
+      <div class="node-control-toolbar">
+        <div>
+          <label for="nodeSelect">Selected node</label>
+          <select id="nodeSelect"></select>
+        </div>
+        <div>
+          <label for="nodeActionSelect">Action</label>
+          <select id="nodeActionSelect">
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="IDLE">IDLE</option>
+            <option value="WARNING">WARNING</option>
+            <option value="ERROR">ERROR</option>
+            <option value="SAFE_MODE">SAFE_MODE</option>
+            <option value="RESET">RESET</option>
+            <option value="ROLE_ACTION">ROLE_ACTION</option>
+          </select>
+        </div>
+        <button id="btnSendNodeAction">Send Node Action</button>
+        <button id="btnRoleAction" class="secondary">Run Role Action</button>
+        <button id="btnWarningAll" class="warning">Warning All</button>
+        <button id="btnErrorAll" class="danger">Error All</button>
+      </div>
+
+      <div id="nodeControlGrid" class="node-control-grid"></div>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-header">
+        <div>
+          <p class="section-kicker">Stylized MicroBot response field</p>
+          <h2>MicroBot Visual Swarm</h2>
+        </div>
+        <span id="simulationMode" class="status-pill simulated">SIMULATED</span>
+      </div>
+
+      <div class="microbot-stage" id="microbotStage">
+        <svg class="swarm-links" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <line x1="50" y1="50" x2="16" y2="20"></line>
+          <line x1="50" y1="50" x2="84" y2="20"></line>
+          <line x1="50" y1="50" x2="13" y2="62"></line>
+          <line x1="50" y1="50" x2="87" y2="62"></line>
+          <line x1="50" y1="50" x2="32" y2="88"></line>
+          <line x1="50" y1="50" x2="68" y2="88"></line>
+        </svg>
+
+        <div id="masterBeacon" class="master-beacon">
+          <span>NODE_00</span>
+          <strong>MASTER</strong>
+        </div>
+
+        <div id="microbotVisuals" class="microbot-visuals"></div>
+      </div>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-header">
+        <div>
+          <p class="section-kicker">Node layer</p>
+          <h2>Node Grid</h2>
+        </div>
+        <span class="inline-note">Cards are clickable; selected node details appear below.</span>
+      </div>
+      <div id="nodeGrid" class="node-grid"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <p class="section-kicker">Master node</p>
+          <h2>NODE_00_MASTER</h2>
+        </div>
+        <span id="masterBadge" class="status-pill ready">READY</span>
+      </div>
+
+      <div class="master-card">
+        <div>
+          <span class="label">Node ID</span>
+          <strong>NODE_00_MASTER</strong>
+        </div>
+        <div>
+          <span class="label">Role</span>
+          <strong>Coordinator / command router</strong>
+        </div>
+        <div>
+          <span class="label">Last Command</span>
+          <strong id="lastCommand">none</strong>
+        </div>
+        <div>
+          <span class="label">Last Packet</span>
+          <strong id="lastPacketType">none</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div>
+          <p class="section-kicker">Telemetry</p>
+          <h2>Event Summary</h2>
+        </div>
+      </div>
+
+      <div class="telemetry-grid">
+        <div class="metric compact">
+          <span>Total Packets</span>
+          <strong id="packetCount">0</strong>
+        </div>
+        <div class="metric compact">
+          <span>Online Nodes</span>
+          <strong id="onlineNodes">0</strong>
+        </div>
+        <div class="metric compact">
+          <span>Warnings</span>
+          <strong id="warningCount">0</strong>
+        </div>
+        <div class="metric compact">
+          <span>Errors</span>
+          <strong id="errorCount">0</strong>
+        </div>
+      </div>
+
+      <p class="note">
+        Simulated data is marked as pre-hardware. Hardware mode remains separate and requires real ESP32 evidence.
+      </p>
+    </section>
+
+
+
+    <section class="panel wide gesture-control-panel">
+      <div class="panel-header">
+        <div>
+          <p class="section-kicker">Gesture input / camera control</p>
+          <h2>Hand Gesture MicroBot Control</h2>
+        </div>
+        <span id="gestureStatusBadge" class="status-pill simulated">GESTURE OFF</span>
+      </div>
+
+      <div class="gesture-layout">
+        <div class="gesture-camera-card">
+          <div class="gesture-video-wrap">
+            <video id="gestureVideo" autoplay playsinline muted></video>
+            <canvas id="gestureCanvas"></canvas>
+            <div class="gesture-overlay-copy">
+              <strong id="gestureName">No gesture</strong>
+              <span id="gestureMeaning">Start the camera to enable browser-side gesture control.</span>
+            </div>
+          </div>
+
+          <div class="gesture-controls">
+            <button id="btnGestureStart">Start Gesture Control</button>
+            <button id="btnGestureStop" class="secondary">Stop Camera</button>
+            <button id="btnGestureCalibrate" class="secondary">Calibrate Neutral</button>
+            <button id="btnGestureSafetyLock" class="warning">Gesture Safety Lock</button>
+          </div>
+
+          <p class="note">
+            Camera processing runs in the browser. Gestures control only the simulated dashboard state unless
+            real hardware mode is explicitly connected and reviewed later.
+          </p>
+        </div>
+
+        <div class="gesture-data-card">
+          <div class="gesture-readout-grid">
+            <div class="data-card">
+              <span>Detected Gesture</span>
+              <strong id="gestureDetected">NONE</strong>
+              <small>debounced command source</small>
+            </div>
+            <div class="data-card">
+              <span>Selected Node</span>
+              <strong id="gestureSelectedNode">NODE_01</strong>
+              <small>gesture target</small>
+            </div>
+            <div class="data-card">
+              <span>Confidence</span>
+              <strong id="gestureConfidence">0%</strong>
+              <small>heuristic estimate</small>
+            </div>
+            <div class="data-card">
+              <span>Last Command</span>
+              <strong id="gestureLastCommand">none</strong>
+              <small>sent to simulated dashboard</small>
+            </div>
+          </div>
+
+          <div class="gesture-explanation">
+            <h3>Gesture Map</h3>
+            <table class="gesture-table">
+              <thead>
+                <tr>
+                  <th>Gesture</th>
+                  <th>How to do it</th>
+                  <th>Dashboard action</th>
+                  <th>Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Open Palm</td><td>All five fingers extended</td><td><code>SCAN_NODES</code></td><td>Ask the Master to scan the simulated node field.</td></tr>
+                <tr><td>Closed Fist</td><td>All fingers closed</td><td><code>STOP</code></td><td>Put the simulated swarm into safe mode.</td></tr>
+                <tr><td>Index Point</td><td>Only index finger extended</td><td>Selected node <code>ACTIVE</code></td><td>Activate the currently selected MicroBot.</td></tr>
+                <tr><td>Pinch</td><td>Thumb and index close together</td><td>Selected node role action</td><td>Run the special function of the selected node.</td></tr>
+                <tr><td>Peace / V</td><td>Index and middle extended</td><td><code>SWARM_SWEEP</code></td><td>Run an ordered sweep across the six simulated nodes.</td></tr>
+                <tr><td>Three Fingers</td><td>Index, middle and ring extended</td><td><code>MISSION_DEMO</code></td><td>Run the full simulated mission sequence.</td></tr>
+                <tr><td>Thumbs Up</td><td>Thumb extended upward, other fingers closed</td><td><code>ALL_ACTIVE</code></td><td>Activate all simulated MicroBots.</td></tr>
+                <tr><td>Thumbs Down</td><td>Thumb extended downward, other fingers closed</td><td><code>ALL_IDLE</code></td><td>Return all simulated MicroBots to idle.</td></tr>
+                <tr><td>Swipe Right</td><td>Move open hand quickly to the right</td><td>Select next node</td><td>Move target selection forward through NODE_01–NODE_06.</td></tr>
+                <tr><td>Swipe Left</td><td>Move open hand quickly to the left</td><td>Select previous node</td><td>Move target selection backward through NODE_01–NODE_06.</td></tr>
+                <tr><td>Palm Up</td><td>Move open hand upward</td><td>Selected node <code>WARNING</code></td><td>Mark the selected node as warning/review state.</td></tr>
+                <tr><td>Palm Down</td><td>Move open hand downward</td><td>Selected node <code>IDLE</code></td><td>Return the selected node to idle state.</td></tr>
+                <tr><td>Two Hands Open</td><td>Both hands visible and open</td><td><code>RESET</code></td><td>Reset the simulated system to ready/idle.</td></tr>
+                <tr><td>Two Fists</td><td>Both hands visible and closed</td><td><code>EMERGENCY_STOP</code></td><td>Trigger simulated emergency stop.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel wide telemetry-link-panel">
+      <div class="panel-header">
+        <div>
+          <p class="section-kicker">Telemetry / data link</p>
+          <h2>Telemetry Link Analysis</h2>
+        </div>
+        <span id="telemetryHealthBadge" class="status-pill simulated">SIMULATED LINK</span>
+      </div>
+
+      <div class="telemetry-overview-grid">
+        <div class="telemetry-meter"><span>Signal Strength</span><strong id="telemetrySignal">-54 dBm</strong><div class="bar"><i id="telemetrySignalBar"></i></div></div>
+        <div class="telemetry-meter"><span>Estimated Response</span><strong id="telemetryResponseTime">42 ms</strong><div class="bar"><i id="telemetryResponseBar"></i></div></div>
+        <div class="telemetry-meter"><span>Packet Loss</span><strong id="telemetryPacketLoss">0.8%</strong><div class="bar"><i id="telemetryLossBar"></i></div></div>
+        <div class="telemetry-meter"><span>Link Quality</span><strong id="telemetryQuality">94 / 100</strong><div class="bar"><i id="telemetryQualityBar"></i></div></div>
+      </div>
+
+      <div class="telemetry-data-grid">
+        <div class="data-card"><span>Throughput</span><strong id="telemetryThroughput">18.4 kb/s</strong><small>simulated payload stream</small></div>
+        <div class="data-card"><span>Jitter</span><strong id="telemetryJitter">5 ms</strong><small>timing variation</small></div>
+        <div class="data-card"><span>Packets / min</span><strong id="telemetryPacketsMinute">240</strong><small>estimated node traffic</small></div>
+        <div class="data-card"><span>Battery Estimate</span><strong id="telemetryBattery">86%</strong><small>pre-hardware model</small></div>
+        <div class="data-card"><span>Temperature</span><strong id="telemetryTemperature">29.4 °C</strong><small>simulated electronics</small></div>
+        <div class="data-card"><span>Transport</span><strong id="telemetryTransport">mock/jsonl</strong><small>future: USB / Web Serial</small></div>
+      </div>
+
+      <div class="telemetry-controls">
+        <button id="btnTelemetryGood">Good Link</button>
+        <button id="btnTelemetryWeak" class="secondary">Weak Signal</button>
+        <button id="btnTelemetryCongested" class="secondary">Congested Link</button>
+        <button id="btnTelemetryStress" class="warning">Telemetry Stress Test</button>
+        <button id="btnTelemetryReset" class="secondary">Reset Telemetry</button>
+      </div>
+
+      <div class="telemetry-table-wrap">
+        <table class="telemetry-table">
+          <thead><tr><th>Node</th><th>Signal</th><th>Latency</th><th>Loss</th><th>Packets/min</th><th>Battery</th><th>Health</th></tr></thead>
+          <tbody id="telemetryTableBody"></tbody>
+        </table>
+      </div>
+
+      <p class="note">This is a pre-hardware telemetry model. It explains how the future dashboard should reason about signal quality, packet timing, node health and response time. It is not real ESP32 telemetry until hardware logs are captured and reviewed.</p>
+    </section>
+
+
+
+
+
+    <section class="panel wide drone-perimeter-panel" data-app-section="drone-perimeter">
+      <div class="panel-header">
+        <div>
+          <p class="section-kicker">Drone / room mapping / perimeter preview</p>
+          <h2>Drone Perimeter Preview</h2>
+        </div>
+        <span id="dronePerimeterBadge" class="status-pill simulated">PERIMETER SIM</span>
+      </div>
+
+      <div class="drone-perimeter-layout">
+        <div class="drone-map-card">
+          <div class="drone-map-toolbar">
+            <div>
+              <strong>Room Perimeter Map</strong>
+              <span id="droneMissionPhase">IDLE / WAITING FOR SIMULATION</span>
+            </div>
+            <div class="drone-map-mini-status">
+              <span id="droneMapScale">scale: conceptual 1 px = 1 cm</span>
+              <span id="droneMapMode">mode: pre-hardware</span>
+            </div>
+          </div>
+
+          <div class="drone-room-map" id="droneRoomMap">
+            <svg id="droneRoomSvg" viewBox="0 0 1000 640" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <filter id="droneGlow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="4" result="blur"/>
+                  <feMerge>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
+
+              <rect x="55" y="55" width="890" height="530" rx="34" class="room-boundary"/>
+              <path id="dronePerimeterPath" class="perimeter-path" d="M 120 120 L 880 120 L 880 520 L 120 520 Z"/>
+              <path id="droneProgressPath" class="perimeter-progress" d="M 120 120 L 880 120 L 880 520 L 120 520 Z"/>
+
+              <g id="droneScanPoints"></g>
+              <g id="droneObstacles"></g>
+              <g id="droneMicrobots"></g>
+
+              <g id="droneVehicle" transform="translate(120,120)">
+                <circle r="26" class="drone-body" filter="url(#droneGlow)"/>
+                <circle cx="-34" cy="-34" r="18" class="drone-rotor"/>
+                <circle cx="34" cy="-34" r="18" class="drone-rotor"/>
+                <circle cx="-34" cy="34" r="18" class="drone-rotor"/>
+                <circle cx="34" cy="34" r="18" class="drone-rotor"/>
+                <line x1="-24" y1="-24" x2="24" y2="24" class="drone-arm"/>
+                <line x1="24" y1="-24" x2="-24" y2="24" class="drone-arm"/>
+                <polygon points="0,-14 12,14 0,8 -12,14" class="drone-heading"/>
+              </g>
+
+              <g id="droneSensorCone" transform="translate(120,120)">
+                <path d="M 0 0 L 90 -35 Q 122 0 90 35 Z" class="sensor-cone"/>
+              </g>
+            </svg>
+          </div>
+        </div>
+
+        <div class="drone-control-card">
+          <div class="drone-stat-grid">
+            <div class="data-card"><span>Mission</span><strong id="droneMissionState">IDLE</strong><small>simulated mission state</small></div>
+            <div class="data-card"><span>Coverage</span><strong id="droneCoverage">0%</strong><small>perimeter progress</small></div>
+            <div class="data-card"><span>Distance</span><strong id="droneDistance">0.0 m</strong><small>simulated travelled path</small></div>
+            <div class="data-card"><span>Points</span><strong id="dronePointCount">0</strong><small>scan points recorded</small></div>
+            <div class="data-card"><span>Obstacles</span><strong id="droneObstacleCount">0</strong><small>simulated detections</small></div>
+            <div class="data-card"><span>Link</span><strong id="droneLinkQuality">94/100</strong><small>from telemetry model if present</small></div>
+          </div>
+
+          <div class="drone-controls">
+            <button id="btnDroneStart">Start Perimeter Sim</button>
+            <button id="btnDronePause" class="secondary">Pause</button>
+            <button id="btnDroneResume" class="secondary">Resume</button>
+            <button id="btnDroneReset" class="secondary">Reset</button>
+            <button id="btnDroneObstacles" class="secondary">Toggle Obstacles</button>
+            <button id="btnDroneMicrobots" class="secondary">Toggle MicroBots</button>
+            <button id="btnDroneExport" class="secondary">Export Perimeter JSON</button>
+          </div>
+
+          <div class="drone-explanation-card">
+            <h3>Perimeter Preview Meaning</h3>
+            <p>
+              This preview represents the future drone-perimeter workflow: the drone follows the room
+              boundary, produces scan points, estimates coverage, detects obstacles and shares the
+              resulting map with the MicroBot dashboard. It is a pre-hardware simulation and does not
+              control a real drone.
+            </p>
+          </div>
+
+          <div class="drone-event-card">
+            <h3>Perimeter Event Log</h3>
+            <pre id="droneEventLog" class="drone-event-log">Drone perimeter preview ready.</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel wide microbot-os-console-panel" data-app-section="os-console">
+      <div class="panel-header">
+        <div>
+          <p class="section-kicker">MicroBot OS / runtime layer</p>
+          <h2>MicroBot OS Console</h2>
+        </div>
+        <span id="osConsoleBadge" class="status-pill simulated">OS MOCK</span>
+      </div>
+
+      <div class="os-console-layout">
+        <div class="os-console-main">
+          <div class="os-screen">
+            <div class="os-screen-header">
+              <span>MicroBot OS Lab v0.3</span>
+              <span id="osClock">--:--:--</span>
+            </div>
+            <pre id="osConsoleOutput" class="os-console-output"></pre>
+            <div class="os-command-row">
+              <span class="os-prompt">microbot-os&gt;</span>
+              <input id="osCommandInput" type="text" value="help" autocomplete="off" spellcheck="false">
+              <button id="btnOsRun">Run</button>
+            </div>
+          </div>
+
+          <div class="os-console-buttons">
+            <button data-os-command="boot">boot</button>
+            <button data-os-command="status" class="secondary">status</button>
+            <button data-os-command="kernel" class="secondary">kernel</button>
+            <button data-os-command="drivers" class="secondary">drivers</button>
+            <button data-os-command="modules" class="secondary">modules</button>
+            <button data-os-command="nodes" class="secondary">nodes</button>
+            <button data-os-command="telemetry" class="secondary">telemetry</button>
+            <button data-os-command="gesture" class="secondary">gesture</button>
+            <button data-os-command="docs" class="secondary">docs</button>
+            <button data-os-command="evidence" class="secondary">evidence</button>
+            <button data-os-command="safety" class="warning">safety</button>
+            <button data-os-command="demo" class="secondary">demo</button>
+            <button data-os-command="clear" class="secondary">clear</button>
+          </div>
+        </div>
+
+        <div class="os-console-side">
+          <div class="os-status-grid">
+            <div class="data-card"><span>Kernel</span><strong id="osKernelState">MOCK_READY</strong><small>browser-side runtime</small></div>
+            <div class="data-card"><span>Modules</span><strong id="osModuleCount">0</strong><small>registered dashboard modules</small></div>
+            <div class="data-card"><span>Drivers</span><strong id="osDriverCount">0</strong><small>simulated HAL drivers</small></div>
+            <div class="data-card"><span>Safety</span><strong id="osSafetyState">NORMAL</strong><small>mirrors dashboard state</small></div>
+          </div>
+
+          <div class="os-architecture-card">
+            <h3>Runtime Architecture</h3>
+            <div class="os-layer-list">
+              <div><span>01</span><strong>Boot Layer</strong><small>startup, boot log, configuration load</small></div>
+              <div><span>02</span><strong>Kernel Layer</strong><small>state registry, command router, module table</small></div>
+              <div><span>03</span><strong>Driver Layer</strong><small>serial, telemetry, gesture, visual swarm, future ESP32</small></div>
+              <div><span>04</span><strong>Service Layer</strong><small>heartbeat, diagnostics, safety, evidence, documentation</small></div>
+              <div><span>05</span><strong>Interface Layer</strong><small>dashboard, OS console, Data Center, terminal</small></div>
+            </div>
+          </div>
+
+          <div class="os-help-card">
+            <h3>Core Commands</h3>
+            <p>
+              Try <code>help</code>, <code>status</code>, <code>boot</code>, <code>nodes</code>,
+              <code>telemetry</code>, <code>gesture</code>, <code>docs</code>, <code>safety</code>,
+              <code>evidence</code>, <code>demo</code>.
+            </p>
+            <p>
+              This console is a browser-side OS interface mock. It is designed to explain how
+              MicroBot OS will coordinate modules, drivers, commands and evidence, but it is not
+              a physical embedded boot.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel wide documentation-viewer-panel" data-app-section="documentation">
+      <div class="panel-header">
+        <div>
+          <p class="section-kicker">Documentation / reference base</p>
+          <h2>Documentation Viewer</h2>
+        </div>
+        <span id="documentationViewerBadge" class="status-pill simulated">REFERENCE MAP</span>
+      </div>
+
+      <div class="doc-viewer-hero">
+        <div>
+          <h3>MicroBot Knowledge Library</h3>
+          <p>
+            This section organizes the project documentation, current repository docs and the wider
+            MicroBot reference base: operational docs, roadmap, hardware, firmware, dashboard,
+            simulation, safety, demo, pitch, GitHub publication, MicroBot OS, dimension engine,
+            drone integration, telemetry, cybersecurity and portfolio material.
+          </p>
+        </div>
+        <div class="doc-viewer-stats">
+          <div><span>Visible docs</span><strong id="docVisibleCount">0</strong></div>
+          <div><span>Total catalog</span><strong id="docTotalCount">0</strong></div>
+          <div><span>Local links</span><strong id="docLocalCount">0</strong></div>
+        </div>
+      </div>
+
+      <div class="doc-viewer-controls">
+        <div>
+          <label for="docSearchInput">Search documentation</label>
+          <input id="docSearchInput" type="text" placeholder="Try: firmware, safety, Andrea, dimension engine, drone, OS, BOM, telemetry">
+        </div>
+        <div>
+          <label for="docCategoryFilter">Category</label>
+          <select id="docCategoryFilter">
+            <option value="all">All categories</option>
+          </select>
+        </div>
+        <div>
+          <label for="docStatusFilter">Status</label>
+          <select id="docStatusFilter">
+            <option value="all">All statuses</option>
+            <option value="local">Local repo docs</option>
+            <option value="reference">Reference base</option>
+            <option value="private">Private/source material</option>
+            <option value="planned">Planned/future</option>
+          </select>
+        </div>
+        <button id="btnDocReset" class="secondary">Reset</button>
+        <button id="btnDocExport" class="secondary">Export Catalog JSON</button>
+      </div>
+
+      <div id="docCategoryPills" class="doc-category-pills"></div>
+      <div id="docViewerGrid" class="doc-viewer-grid"></div>
+
+      <p class="note">
+        Local repo documents open directly when present. Private PDFs, Pages exports and large source
+        documents are cataloged as reference-base entries so they remain part of the design context
+        without being accidentally published.
+      </p>
+    </section>
+
+    <section class="panel wide data-center-panel" data-app-section="data-center">
+      <div class="panel-header">
+        <div>
+          <p class="section-kicker">Data center / event audit</p>
+          <h2>Data Center</h2>
+        </div>
+        <span id="dataCenterBadge" class="status-pill simulated">LOCAL SESSION</span>
+      </div>
+
+      <div class="data-center-grid">
+        <div class="data-center-card"><span>Session Packets</span><strong id="dataCenterPackets">0</strong><small>dashboard packet counter</small></div>
+        <div class="data-center-card"><span>Terminal Lines</span><strong id="dataCenterLines">0</strong><small>raw protocol rows</small></div>
+        <div class="data-center-card"><span>Errors</span><strong id="dataCenterErrors">0</strong><small>dashboard errors</small></div>
+        <div class="data-center-card"><span>Warnings</span><strong id="dataCenterWarnings">0</strong><small>dashboard warnings</small></div>
+      </div>
+
+      <div class="data-center-tools">
+        <div>
+          <label for="dataLogFilter">Filter terminal/event text</label>
+          <input id="dataLogFilter" type="text" placeholder="NODE_01, TELEMETRY, GESTURE, ERROR, PRE_HARDWARE_SIMULATED">
+        </div>
+        <button id="btnApplyDataFilter">Apply Filter</button>
+        <button id="btnClearDataFilter" class="secondary">Clear Filter</button>
+        <button id="btnCopyDataSnapshot" class="secondary">Copy Snapshot</button>
+        <button id="btnDownloadDataSnapshot" class="secondary">Download JSON</button>
+      </div>
+
+      <div class="data-center-columns">
+        <div>
+          <h3>Filtered Event View</h3>
+          <pre id="dataFilteredLog" class="data-center-pre">No filter applied yet.</pre>
+        </div>
+        <div>
+          <h3>State Snapshot</h3>
+          <pre id="dataStateSnapshot" class="data-center-pre">{}</pre>
+        </div>
+      </div>
+
+      <p class="note">
+        The Data Center is a local review and debugging layer. It is useful for simulated evidence,
+        terminal filtering and snapshots, but it is not hardware validation.
+      </p>
+    </section>
+
+    <section class="panel wide inspector-panel">
+      <div class="panel-header">
+        <div>
+          <p class="section-kicker">Selected data</p>
+          <h2>Packet / Node Inspector</h2>
+        </div>
+      </div>
+      <div class="inspector-grid">
+        <pre id="packetInspector" class="inspector">{}</pre>
+        <pre id="nodeInspector" class="inspector">{}</pre>
+      </div>
+    </section>
+
+    <section class="panel terminal-panel wide">
+      <div class="panel-header">
+        <div>
+          <p class="section-kicker">Protocol stream</p>
+          <h2>Raw Protocol Terminal</h2>
+        </div>
+        <span id="terminalCount" class="inline-note">0 lines</span>
+      </div>
+      <pre id="terminal"></pre>
+    </section>
+  </main>
+
+  <script src="protocol_parser.js"></script>
+  <script src="serial_adapter.js"></script>
+  <script src="app.js"></script>
+  <script src="dashboard_shell.js"></script>
+  <script src="documentation_viewer.js"></script>
+  <script src="microbot_os_console.js"></script>
+  <script src="drone_perimeter_preview.js"></script>
+  <script src="gesture_control.js"></script>
+</body>
+</html>

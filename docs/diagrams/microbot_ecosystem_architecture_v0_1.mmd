@@ -1,0 +1,29 @@
+flowchart LR
+    PC[PC Controller / Dashboard] --> BRIDGE[Web Serial / WebSocket Bridge]
+    BRIDGE --> MASTER[NODE_00_MASTER / ESP32 Master]
+
+    MASTER --> N1[NODE_01_LED_STATE]
+    MASTER --> N2[NODE_02_PROXIMITY_SAFETY]
+    MASTER --> N3[NODE_03_MAGNETIC_DOCKING]
+    MASTER --> N4[NODE_04_MOTION_ACTUATOR]
+    MASTER --> N5[NODE_05_TELEMETRY_SENSOR]
+    MASTER --> N6[NODE_06_VISION_CAMERA]
+
+    N1 --> TEL[Telemetry Layer]
+    N2 --> TEL
+    N3 --> TEL
+    N4 --> TEL
+    N5 --> TEL
+    N6 --> TEL
+
+    TEL --> DASH[Dashboard State Manager]
+    DASH --> SIM[Simulation Engine 3D/4D/5D/6D]
+    SIM --> VIS[Visual State / Swarm Representation]
+
+    MASTER --> SAFETY[Safety Layer]
+    SAFETY --> TEL
+    SAFETY --> DASH
+
+    DOCS[Documentation Layer] -.-> PC
+    DOCS -.-> MASTER
+    DOCS -.-> SIM
