@@ -1,743 +1,384 @@
-/* ═══════════════════════════════════════════════════════════
-   AR INTERACTION LAB — ADVANCED
-   MediaPipe Hand Tracking + Three.js 3D MicroBot
-   ─ Complex model with 15 parts
-   ─ Particle effects, energy fields, holographic wireframes
-   ─ Glow pulses & animated connections
-   ─ One hand pinch  → grab & move assembled model
-   ─ Two hands pinch → explode & grab individual parts
-═══════════════════════════════════════════════════════════ */
+/* MicroBot AR Interaction Lab — upgraded public demo
+   Local camera processing, gesture HUD, demo mode, part inspector, 15-part 3D MicroBot. */
 
 import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js";
 import { HandLandmarker, FilesetResolver } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs";
 
-const $ = id => document.getElementById(id);
-const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-const lerp  = (a, b, t) => a + (b - a) * t;
-const TAU   = Math.PI * 2;
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const TAU = Math.PI * 2;
 
-/* ── DOM ── */
-const video       = $("arVideo");
-const canvas      = $("arCanvas");
-const startBtn    = $("arStartBtn");
-const stopBtn     = $("arStopBtn");
-const resetBtn    = $("arResetBtn");
+const video = $("arVideo");
+const canvas = $("arCanvas");
+const startBtn = $("arStartBtn");
+const stopBtn = $("arStopBtn");
+const resetBtn = $("arResetBtn");
 const instructions = $("arInstructions");
-
-const ui = {
-  mode:     $("arModeChip"),
-  hands:    $("arHandsChip"),
-  fps:      $("arFpsChip"),
-  camera:   $("arCameraStatus"),
-  tracking: $("arTrackingStatus"),
-  gesture:  $("arGestureStatus"),
-  modeText: $("arModeStatus"),
-};
+const viewport = document.querySelector(".arlab-viewport");
+const sidebar = document.querySelector(".arlab-sidebar");
 
 if (!video || !canvas) throw new Error("AR Lab elements not found");
 
-/* ── State ── */
-let handLandmarker = null;
-let mediaStream    = null;
-let renderer, scene, camera3d, clock;
-let running   = false;
-let animId    = null;
-let lastTime  = performance.now();
-let explodeT  = 0;
-let targetExplode = 0;
+const baseUI = {
+  mode: $("arModeChip"),
+  hands: $("arHandsChip"),
+  fps: $("arFpsChip"),
+  camera: $("arCameraStatus"),
+  tracking: $("arTrackingStatus"),
+  gesture: $("arGestureStatus"),
+  modeText: $("arModeStatus"),
+};
 
+const partInfo = {
+  shell: ["Outer Shell", "Protective body", "Digital concept", "External structure for protection, alignment and visual identity of the MicroBot unit."],
+  dome: ["Upper Dome", "Top cap / orientation layer", "Digital concept", "Upper cover used to communicate orientation, status and future sensor or light integration."],
+  bottomCap: ["Bottom Cap", "Base plate", "Digital concept", "Lower interface that represents the contact plane and the mechanical constraint of the internal stack."],
+  coilPrimary: ["Primary Coil", "Main electromagnetic actuator", "Simulation target", "Primary coil for attraction, repulsion and docking experiments. Real force requires physical validation."],
+  coilSecondary: ["Secondary Coil", "Auxiliary winding", "Simulation target", "Secondary electromagnetic layer for visualizing multi-state field control and future axis separation."],
+  magnetCore: ["Magnet Core", "Permanent magnetic reference", "Simulation target", "Central magnetic core used to explain alignment, docking and polarity-based interaction logic."],
+  poleNorth: ["North Pole", "Polarity marker", "Educational marker", "Visual indicator for one side of the magnetic polarity model."],
+  poleSouth: ["South Pole", "Polarity marker", "Educational marker", "Visual indicator for the opposite side of the magnetic polarity model."],
+  pcb: ["Main PCB", "Embedded electronics carrier", "Planned hardware", "Board layer for MCU, power routing, coil drivers, sensors and telemetry interfaces."],
+  chip: ["ESP32 Control Core", "Embedded processing", "Firmware-ready target", "ESP32-based control layer for commands, telemetry, safety state and node behavior."],
+  antenna: ["Wireless Antenna", "Communication interface", "Planned network layer", "Wireless link for future ESP-NOW or similar low-latency controller/node experiments."],
+  battery: ["LiPo Battery", "Energy source", "Design target", "Local energy block. Real implementation needs charging, protection, current and thermal safety."],
+  ledStatus: ["RGB Status LED", "Visible feedback", "Prototype-friendly", "Status indicator for node state, errors, connection state and early hardware demonstrations."],
+  sensorArray: ["Sensor Array", "Perception inputs", "Planned sensing layer", "Representation of local sensors for proximity, orientation, magnetic or environmental feedback."],
+  gears: ["Micro Gear Mechanism", "Mechanical concept", "Concept visual", "Mechanical detail included to communicate possible actuation or transmission layers."],
+};
+const partOrder = Object.keys(partInfo);
+
+let renderer, scene, camera3d, clock, handLandmarker, stream, raf;
+let running = false;
+let demo = false;
+let explode = 0;
+let targetExplode = 0;
+let selected = -1;
+let last = performance.now();
+let gesture = "IDLE";
+const parts = [];
 const hands = { left: null, right: null, count: 0 };
 const pinch = { left: false, right: false };
+const PINCH_ON = 0.065;
+const PINCH_OFF = 0.095;
+let particles;
+let rings = [];
+let wire;
+let ui = {};
 
-/* Effects containers */
-let particles       = null;
-let energyRings     = [];
-let connectionLines = [];
-let hologramWire    = null;
+function setText(el, text) { if (el) el.textContent = text; }
 
-/* ═══════════════════════════════════════════════════════════
-   THREE.JS SETUP
-═══════════════════════════════════════════════════════════ */
-const PARTS = [];
+function injectCSS() {
+  if ($("arLabUpgradeStyles")) return;
+  const s = document.createElement("style");
+  s.id = "arLabUpgradeStyles";
+  s.textContent = `
+    .arlab-btn-demo{border-color:rgba(0,255,136,.38)!important;color:var(--accent-secondary)!important}.arlab-btn-demo.active{background:var(--accent-secondary)!important;color:#050508!important;box-shadow:0 0 26px rgba(0,255,136,.22)}
+    .arlab-upgrade-status{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}.arlab-upgrade-stat{border:1px solid var(--border-subtle);background:rgba(0,0,0,.28);padding:.8rem;min-height:68px}.arlab-upgrade-stat span{display:block;font-family:"JetBrains Mono",monospace;font-size:.52rem;color:var(--accent-mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:.28rem}.arlab-upgrade-stat strong{font-family:"Orbitron",sans-serif;font-size:.8rem;color:var(--accent-white);line-height:1.35;word-break:break-word}
+    .arlab-gesture-hud{position:absolute;left:1rem;right:1rem;bottom:1rem;z-index:8;display:grid;grid-template-columns:1fr 1.6fr;gap:.8rem;pointer-events:none}.arlab-hud-card{border:1px solid var(--border-subtle);background:rgba(5,5,8,.66);backdrop-filter:blur(16px);padding:.85rem 1rem;box-shadow:0 18px 45px rgba(0,0,0,.35)}.arlab-hud-title{font-family:"JetBrains Mono",monospace;font-size:.56rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent-primary);margin-bottom:.28rem}.arlab-hud-text{color:var(--text-primary);font-size:.84rem;line-height:1.45}.arlab-hud-progress{height:4px;margin-top:.65rem;background:rgba(255,255,255,.08);overflow:hidden}.arlab-hud-progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent-primary),var(--accent-secondary));transition:width .18s ease}
+    .arlab-inspector-title{font-family:"Orbitron",sans-serif;font-size:1rem;letter-spacing:1px;margin-bottom:.5rem}.arlab-inspector-role{font-family:"JetBrains Mono",monospace;font-size:.58rem;color:var(--accent-primary);letter-spacing:1px;text-transform:uppercase;margin-bottom:.45rem}.arlab-inspector-status{font-family:"JetBrains Mono",monospace;font-size:.58rem;color:var(--warning);letter-spacing:1px;text-transform:uppercase;margin-bottom:.9rem}.arlab-inspector-text{color:var(--text-secondary);font-size:.9rem;line-height:1.85}.arlab-demo-note,.arlab-privacy-note{margin-top:.8rem;padding:.8rem;border:1px solid var(--border-subtle);background:rgba(0,0,0,.22);color:var(--text-secondary);font-size:.78rem;line-height:1.65}.arlab-privacy-note strong{color:var(--accent-secondary);font-family:"JetBrains Mono",monospace;font-size:.62rem;letter-spacing:1px;text-transform:uppercase}
+    .arlab-ghost-cursor{position:absolute;width:22px;height:22px;border-radius:50%;border:1px solid rgba(0,212,255,.92);box-shadow:0 0 18px rgba(0,212,255,.35);transform:translate(-50%,-50%) scale(.82);opacity:0;z-index:9;pointer-events:none;transition:opacity .16s ease,transform .16s ease,border-color .16s ease}.arlab-ghost-cursor.active{opacity:1}.arlab-ghost-cursor.grab{transform:translate(-50%,-50%) scale(1.25);border-color:rgba(0,255,136,.95);box-shadow:0 0 24px rgba(0,255,136,.45)}.arlab-part.active{transform:translateX(4px);border-color:rgba(0,212,255,.5)!important;background:rgba(0,212,255,.08)!important}
+    @media(max-width:900px){.arlab-upgrade-status,.arlab-gesture-hud{grid-template-columns:1fr}}
+  `;
+  document.head.appendChild(s);
+}
+
+function buildUpgradeUI() {
+  injectCSS();
+  const controls = document.querySelector(".arlab-controls");
+  if (controls && !$("arDemoBtn")) {
+    const b = document.createElement("button");
+    b.id = "arDemoBtn";
+    b.type = "button";
+    b.className = "arlab-btn arlab-btn-demo";
+    b.textContent = "DEMO MODE";
+    controls.appendChild(b);
+  }
+  if (viewport && !$("arGestureHud")) {
+    const ghost = document.createElement("div");
+    ghost.id = "arGhostCursor";
+    ghost.className = "arlab-ghost-cursor";
+    viewport.appendChild(ghost);
+    const h = document.createElement("div");
+    h.id = "arGestureHud";
+    h.className = "arlab-gesture-hud";
+    h.innerHTML = `<div class="arlab-hud-card"><div class="arlab-hud-title" id="arHudTitle">Interaction Guide</div><div class="arlab-hud-text" id="arHudText">Premi START AR oppure DEMO MODE.</div></div><div class="arlab-hud-card"><div class="arlab-hud-title">Explode / Inspection Progress</div><div class="arlab-hud-text">Una mano: grab. Due mani: explode. Demo: tour automatico.</div><div class="arlab-hud-progress"><span id="arHudProgress"></span></div></div>`;
+    viewport.appendChild(h);
+  }
+  if (sidebar && !$("arUpgradeStatusCard")) {
+    const card = document.createElement("div");
+    card.className = "arlab-info-card";
+    card.id = "arUpgradeStatusCard";
+    card.innerHTML = `<div class="arlab-info-title">Interaction Status</div><div class="arlab-upgrade-status"><div class="arlab-upgrade-stat"><span>Camera</span><strong id="arStatusCamera">OFF</strong></div><div class="arlab-upgrade-stat"><span>Tracking</span><strong id="arStatusTracking">OFF</strong></div><div class="arlab-upgrade-stat"><span>Hands</span><strong id="arStatusHands">0</strong></div><div class="arlab-upgrade-stat"><span>Gesture</span><strong id="arStatusGesture">IDLE</strong></div><div class="arlab-upgrade-stat"><span>Model</span><strong id="arStatusModel">ASSEMBLED</strong></div><div class="arlab-upgrade-stat"><span>Selected</span><strong id="arStatusSelected">None</strong></div></div><div class="arlab-demo-note">Local browser digital twin demo. This is not real hardware control yet.</div>`;
+    sidebar.insertBefore(card, sidebar.children[1] || null);
+  }
+  if (sidebar && !$("arPartInspector")) {
+    const ins = document.createElement("div");
+    ins.className = "arlab-info-card";
+    ins.id = "arPartInspector";
+    ins.innerHTML = `<div class="arlab-info-title">Selected Component</div><div class="arlab-inspector-title" id="arInspectorTitle">MicroBot Assembly</div><div class="arlab-inspector-role" id="arInspectorRole">Full digital twin view</div><div class="arlab-inspector-status" id="arInspectorStatus">Local interactive demo</div><p class="arlab-inspector-text" id="arInspectorText">Start the AR Lab or activate Demo Mode. When a component is selected, this panel explains its role inside the MicroBot architecture.</p><div class="arlab-privacy-note"><strong>Privacy</strong><br>Camera frames are processed locally in the browser. No video upload is performed by this static GitHub Pages demo.</div>`;
+    const partsCard = document.querySelector(".arlab-parts-list")?.closest(".arlab-info-card");
+    if (partsCard) sidebar.insertBefore(ins, partsCard);
+    else sidebar.appendChild(ins);
+  }
+  ui = {
+    demoBtn: $("arDemoBtn"), cam: $("arStatusCamera"), track: $("arStatusTracking"), hands: $("arStatusHands"), gest: $("arStatusGesture"), model: $("arStatusModel"), sel: $("arStatusSelected"),
+    hudTitle: $("arHudTitle"), hudText: $("arHudText"), hudProgress: $("arHudProgress"), ghost: $("arGhostCursor"),
+    title: $("arInspectorTitle"), role: $("arInspectorRole"), status: $("arInspectorStatus"), text: $("arInspectorText")
+  };
+  document.querySelectorAll(".arlab-part").forEach((el) => {
+    el.addEventListener("click", () => selectPart(partOrder.indexOf(el.dataset.part), true));
+  });
+}
+
+function hud(title, text, progress = explode) {
+  setText(ui.hudTitle, title);
+  setText(ui.hudText, text);
+  if (ui.hudProgress) ui.hudProgress.style.width = `${Math.round(clamp(progress, 0, 1) * 100)}%`;
+}
+
+function status() {
+  setText(ui.cam, demo ? "DEMO" : stream ? "ON" : "OFF");
+  setText(ui.track, demo ? "DEMO PLAYBACK" : running ? "ACTIVE" : "OFF");
+  setText(ui.hands, `${hands.count}`);
+  setText(ui.gest, gesture);
+  setText(ui.model, explode > .72 ? "EXPLODED" : explode > .12 ? "INSPECTION" : "ASSEMBLED");
+  setText(ui.sel, selected >= 0 ? partInfo[parts[selected]?.label]?.[0] || parts[selected]?.label : "None");
+}
 
 function initThree() {
   renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setClearColor(0x000000, 0);
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.2;
-
-  scene  = new THREE.Scene();
-  clock  = new THREE.Clock();
-
-  camera3d = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+  scene = new THREE.Scene();
+  clock = new THREE.Clock();
+  camera3d = new THREE.PerspectiveCamera(50, 1, .1, 100);
   camera3d.position.set(0, 0, 5);
-
-  /* Lights — richer setup */
-  scene.add(new THREE.AmbientLight(0xffffff, 0.35));
-
-  const keyLight = new THREE.DirectionalLight(0xffffff, 0.9);
-  keyLight.position.set(3, 5, 4);
-  scene.add(keyLight);
-
-  const rimLight = new THREE.DirectionalLight(0x00d4ff, 0.4);
-  rimLight.position.set(-3, -2, 2);
-  scene.add(rimLight);
-
-  const fillLight = new THREE.DirectionalLight(0xff6b9d, 0.2);
-  fillLight.position.set(-4, 3, -3);
-  scene.add(fillLight);
-
-  const bottomLight = new THREE.PointLight(0x00ff88, 0.3, 8);
-  bottomLight.position.set(0, -3, 0);
-  scene.add(bottomLight);
-
-  buildMicroBot();
+  scene.add(new THREE.AmbientLight(0xffffff, .38));
+  [[0xffffff,.9,3,5,4],[0x00d4ff,.45,-3,-2,2],[0xff6b9d,.22,-4,3,-3]].forEach(([c,i,x,y,z]) => {
+    const l = new THREE.DirectionalLight(c, i);
+    l.position.set(x, y, z);
+    scene.add(l);
+  });
+  const p = new THREE.PointLight(0x00ff88, .35, 8);
+  p.position.set(0, -3, 0);
+  scene.add(p);
+  buildModel();
   buildEffects();
-  resizeRenderer();
+  resize();
+  selectPart(-1);
 }
 
-function resizeRenderer() {
-  const rect = canvas.parentElement.getBoundingClientRect();
-  const w = rect.width, h = rect.height;
-  renderer.setSize(w, h);
-  camera3d.aspect = w / h;
+function resize() {
+  if (!renderer) return;
+  const r = canvas.parentElement.getBoundingClientRect();
+  renderer.setSize(Math.max(1, r.width), Math.max(1, r.height));
+  camera3d.aspect = Math.max(1, r.width) / Math.max(1, r.height);
   camera3d.updateProjectionMatrix();
 }
 
-/* ═══════════════════════════════════════════════════════════
-   BUILD MICROBOT MODEL — 15 DETAILED PARTS
-═══════════════════════════════════════════════════════════ */
-function buildMicroBot() {
-  PARTS.length = 0;
+const mat = (c, o = {}) => new THREE.MeshStandardMaterial({ color:c, metalness:o.m ?? .3, roughness:o.r ?? .5, transparent:o.a != null, opacity:o.a ?? 1, side:o.d ? THREE.DoubleSide : THREE.FrontSide });
+const em = (c, e, i = .6) => new THREE.MeshStandardMaterial({ color:c, metalness:.1, roughness:.3, emissive:new THREE.Color(e), emissiveIntensity:i });
 
-  const mat = (color, opts = {}) => new THREE.MeshStandardMaterial({
-    color,
-    metalness: opts.metal ?? 0.3,
-    roughness: opts.rough ?? 0.5,
-    transparent: opts.alpha != null,
-    opacity: opts.alpha ?? 1,
-    side: opts.double ? THREE.DoubleSide : THREE.FrontSide,
-  });
-
-  const emissiveMat = (color, emColor, intensity = 0.6) => {
-    return new THREE.MeshStandardMaterial({
-      color,
-      metalness: 0.1,
-      roughness: 0.3,
-      emissive: new THREE.Color(emColor),
-      emissiveIntensity: intensity,
-    });
-  };
-
-  /* ──────── 1. OUTER SHELL — main cylindrical body ──────── */
-  const shell = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.55, 0.55, 0.9, 48, 1, true),
-    mat(0x00d4ff, { metal: 0.7, rough: 0.2, alpha: 0.55, double: true })
-  );
-  addPart(shell, [0, 0, 0], [0, 2.2, 0], "shell");
-
-  /* ──────── 2. DOME — top hemispherical cap ──────── */
-  const dome = new THREE.Mesh(
-    new THREE.SphereGeometry(0.55, 48, 24, 0, TAU, 0, Math.PI / 2),
-    mat(0x00b8d9, { metal: 0.6, rough: 0.25, alpha: 0.6 })
-  );
-  dome.position.y = 0.45;
-  addPart(dome, [0, 0.45, 0], [0, 3.2, 0.5], "dome");
-
-  /* ──────── 3. BOTTOM CAP — flat base plate ──────── */
-  const bottomCap = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.55, 0.52, 0.08, 48),
-    mat(0x0a2a3a, { metal: 0.8, rough: 0.15 })
-  );
-  addPart(bottomCap, [0, -0.45, 0], [0, -2.8, 0], "bottomCap");
-
-  /* ──────── 4. COIL PRIMARY — main electromagnetic coil ──────── */
-  const coil1 = new THREE.Mesh(
-    new THREE.TorusGeometry(0.32, 0.05, 16, 48),
-    mat(0xff8a3d, { metal: 0.7, rough: 0.3 })
-  );
-  coil1.rotation.x = Math.PI / 2;
-  addPart(coil1, [0, 0.1, 0], [-2.0, 0.8, 0], "coilPrimary");
-
-  /* ──────── 5. COIL SECONDARY — secondary winding ──────── */
-  const coil2 = new THREE.Mesh(
-    new THREE.TorusGeometry(0.25, 0.04, 16, 48),
-    mat(0xffa726, { metal: 0.6, rough: 0.35 })
-  );
-  coil2.rotation.x = Math.PI / 2;
-  addPart(coil2, [0, -0.1, 0], [-2.0, -0.5, 0.5], "coilSecondary");
-
-  /* ──────── 6. MAGNET CORE — central permanent magnet ──────── */
-  const magnet = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.15, 0.15, 0.55, 24),
-    mat(0xff4d6a, { metal: 0.85, rough: 0.15 })
-  );
-  addPart(magnet, [0, -0.05, 0], [2.0, 0.6, 0], "magnetCore");
-
-  /* ──────── 7. MAGNET POLE NORTH ──────── */
-  const poleTop = new THREE.Mesh(
-    new THREE.SphereGeometry(0.16, 24, 12, 0, TAU, 0, Math.PI / 2),
-    emissiveMat(0xff6b6b, 0xff3333, 0.4)
-  );
-  addPart(poleTop, [0, 0.22, 0], [2.0, 1.5, 0.4], "poleNorth");
-
-  /* ──────── 8. MAGNET POLE SOUTH ──────── */
-  const poleBottom = new THREE.Mesh(
-    new THREE.SphereGeometry(0.16, 24, 12, 0, TAU, Math.PI / 2, Math.PI / 2),
-    emissiveMat(0x6b8fff, 0x3366ff, 0.4)
-  );
-  addPart(poleBottom, [0, -0.32, 0], [2.0, -0.5, 0.4], "poleSouth");
-
-  /* ──────── 9. PCB — main circuit board ──────── */
-  const pcb = new THREE.Mesh(
-    new THREE.BoxGeometry(0.65, 0.05, 0.45),
-    mat(0x00c853, { metal: 0.15, rough: 0.7 })
-  );
-  addPart(pcb, [0, 0.22, 0], [0, -2.0, 1.0], "pcb");
-
-  /* ──────── 10. MICROCHIP — ESP32 processor ──────── */
-  const chip = new THREE.Mesh(
-    new THREE.BoxGeometry(0.18, 0.04, 0.14),
-    mat(0x1a1a2e, { metal: 0.3, rough: 0.5 })
-  );
-  addPart(chip, [0.1, 0.27, 0.05], [0.4, -1.5, 1.4], "chip");
-
-  /* ──────── 11. ANTENNA — wireless module ──────── */
-  const antennaBase = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8),
-    mat(0xcccccc, { metal: 0.9, rough: 0.1 })
-  );
-  const antennaTip = new THREE.Mesh(
-    new THREE.SphereGeometry(0.04, 12, 12),
-    emissiveMat(0x00ff88, 0x00ff88, 0.8)
-  );
-  antennaTip.position.y = 0.15;
-  antennaBase.add(antennaTip);
-  addPart(antennaBase, [0.25, 0.62, 0.15], [1.5, 2.8, 0.8], "antenna");
-
-  /* ──────── 12. BATTERY — LiPo cell ──────── */
-  const batt = new THREE.Mesh(
-    new THREE.BoxGeometry(0.3, 0.12, 0.2),
-    mat(0xffbe2e, { metal: 0.3, rough: 0.45 })
-  );
-  const termPlus = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.03, 0.03, 0.02, 8),
-    emissiveMat(0xff3333, 0xff0000, 0.5)
-  );
-  termPlus.position.set(0.15, 0.06, 0);
-  termPlus.rotation.z = Math.PI / 2;
-  batt.add(termPlus);
-  const termMinus = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.03, 0.03, 0.02, 8),
-    mat(0x333333, { metal: 0.5 })
-  );
-  termMinus.position.set(-0.15, 0.06, 0);
-  termMinus.rotation.z = Math.PI / 2;
-  batt.add(termMinus);
-  addPart(batt, [0.15, -0.28, 0], [1.5, -2.0, -0.5], "battery");
-
-  /* ──────── 13. LED STATUS — RGB indicator ──────── */
-  const led = new THREE.Mesh(
-    new THREE.SphereGeometry(0.06, 16, 16),
-    emissiveMat(0xe040fb, 0xe040fb, 1.0)
-  );
-  addPart(led, [0, 0.52, 0.38], [-1.5, -1.8, -0.5], "ledStatus");
-
-  /* ──────── 14. SENSOR ARRAY — 3 tiny sensors on a base ──────── */
-  const sensorGroup = new THREE.Group();
-  for (let i = 0; i < 3; i++) {
-    const angle = (i / 3) * TAU;
-    const sensor = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.03, 0.03, 0.025, 12),
-      emissiveMat(0x00e5ff, 0x00e5ff, 0.6)
-    );
-    sensor.position.set(Math.cos(angle) * 0.08, 0, Math.sin(angle) * 0.08);
-    sensorGroup.add(sensor);
-  }
-  const sensorBase = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.12, 0.015, 24),
-    mat(0x2a2a3e, { metal: 0.4, rough: 0.4 })
-  );
-  sensorGroup.add(sensorBase);
-  addPart(sensorGroup, [-0.2, 0.48, 0.2], [-1.5, 2.5, 0.8], "sensorArray");
-
-  /* ──────── 15. GEAR MECHANISM — micro gear pair ──────── */
-  const gear1 = createGearMesh(0.14, 12, 0.04, 0xb0bec5);
-  const gear2 = createGearMesh(0.09, 8, 0.04, 0x90a4ae);
-  gear2.position.set(0.2, 0, 0);
-  gear2.rotation.z = Math.PI / 8;
-  const gearGroup = new THREE.Group();
-  gearGroup.add(gear1);
-  gearGroup.add(gear2);
-  gearGroup.rotation.x = Math.PI / 2;
-  addPart(gearGroup, [0, -0.15, 0.3], [-0.5, -2.5, -1.0], "gears");
-}
-
-/* Helper: gear shape via extruded geometry */
-function createGearMesh(radius, teeth, thickness, color) {
-  const shape = new THREE.Shape();
-  const inner = radius * 0.7;
-
-  for (let i = 0; i < teeth; i++) {
-    const a1 = (i / teeth) * TAU;
-    const a2 = ((i + 0.3) / teeth) * TAU;
-    const a3 = ((i + 0.5) / teeth) * TAU;
-    const a4 = ((i + 0.8) / teeth) * TAU;
-
-    const method = i === 0 ? 'moveTo' : 'lineTo';
-    shape[method](Math.cos(a1) * inner, Math.sin(a1) * inner);
-    shape.lineTo(Math.cos(a2) * radius, Math.sin(a2) * radius);
-    shape.lineTo(Math.cos(a3) * radius, Math.sin(a3) * radius);
-    shape.lineTo(Math.cos(a4) * inner, Math.sin(a4) * inner);
-  }
-  shape.closePath();
-
-  const geo = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false });
-  geo.center();
-  return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-    color, metalness: 0.8, roughness: 0.2
-  }));
-}
-
-function addPart(mesh, home, exploded, label) {
-  const homePos     = new THREE.Vector3(...home);
-  const explodedPos = new THREE.Vector3(...exploded);
-  mesh.position.copy(homePos);
-  mesh.userData = { index: PARTS.length, label };
+function add(mesh, home, exploded, label) {
+  const h = new THREE.Vector3(...home);
+  const ex = new THREE.Vector3(...exploded);
+  mesh.position.copy(h);
   scene.add(mesh);
-  PARTS.push({ mesh, homePos, explodedPos, label, grabbed: false });
+  parts.push({ mesh, home:h, exploded:ex, label });
 }
 
-/* ═══════════════════════════════════════════════════════════
-   VISUAL EFFECTS
-═══════════════════════════════════════════════════════════ */
+function gear(radius, teeth, thick, color) {
+  const sh = new THREE.Shape();
+  const inn = radius * .7;
+  for (let i = 0; i < teeth; i++) {
+    const a1 = i / teeth * TAU, a2 = (i + .3) / teeth * TAU, a3 = (i + .5) / teeth * TAU, a4 = (i + .8) / teeth * TAU;
+    sh[i ? "lineTo" : "moveTo"](Math.cos(a1) * inn, Math.sin(a1) * inn);
+    sh.lineTo(Math.cos(a2) * radius, Math.sin(a2) * radius);
+    sh.lineTo(Math.cos(a3) * radius, Math.sin(a3) * radius);
+    sh.lineTo(Math.cos(a4) * inn, Math.sin(a4) * inn);
+  }
+  sh.closePath();
+  const g = new THREE.ExtrudeGeometry(sh, { depth:thick, bevelEnabled:false });
+  g.center();
+  return new THREE.Mesh(g, mat(color, { m:.8, r:.2 }));
+}
+
+function buildModel() {
+  parts.length = 0;
+  add(new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,.9,48,1,true), mat(0x00d4ff,{m:.7,r:.2,a:.55,d:true})), [0,0,0], [0,2.2,0], "shell");
+  add(new THREE.Mesh(new THREE.SphereGeometry(.55,48,24,0,TAU,0,Math.PI/2), mat(0x00b8d9,{m:.6,r:.25,a:.6})), [0,.45,0], [0,3.2,.5], "dome");
+  add(new THREE.Mesh(new THREE.CylinderGeometry(.55,.52,.08,48), mat(0x0a2a3a,{m:.8,r:.15})), [0,-.45,0], [0,-2.8,0], "bottomCap");
+  const c1 = new THREE.Mesh(new THREE.TorusGeometry(.32,.05,16,48), mat(0xff8a3d,{m:.7,r:.3})); c1.rotation.x = Math.PI/2; add(c1, [0,.1,0], [-2,.8,0], "coilPrimary");
+  const c2 = new THREE.Mesh(new THREE.TorusGeometry(.25,.04,16,48), mat(0xffa726,{m:.6,r:.35})); c2.rotation.x = Math.PI/2; add(c2, [0,-.1,0], [-2,-.5,.5], "coilSecondary");
+  add(new THREE.Mesh(new THREE.CylinderGeometry(.15,.15,.55,24), mat(0xff4d6a,{m:.85,r:.15})), [0,-.05,0], [2,.6,0], "magnetCore");
+  add(new THREE.Mesh(new THREE.SphereGeometry(.16,24,12,0,TAU,0,Math.PI/2), em(0xff6b6b,0xff3333,.4)), [0,.22,0], [2,1.5,.4], "poleNorth");
+  add(new THREE.Mesh(new THREE.SphereGeometry(.16,24,12,0,TAU,Math.PI/2,Math.PI/2), em(0x6b8fff,0x3366ff,.4)), [0,-.32,0], [2,-.5,.4], "poleSouth");
+  add(new THREE.Mesh(new THREE.BoxGeometry(.65,.05,.45), mat(0x00c853,{m:.15,r:.7})), [0,.22,0], [0,-2,1], "pcb");
+  add(new THREE.Mesh(new THREE.BoxGeometry(.18,.04,.14), mat(0x1a1a2e,{m:.3,r:.5})), [.1,.27,.05], [.4,-1.5,1.4], "chip");
+  const ant = new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.3,8), mat(0xcccccc,{m:.9,r:.1}));
+  const tip = new THREE.Mesh(new THREE.SphereGeometry(.04,12,12), em(0x00ff88,0x00ff88,.8)); tip.position.y = .15; ant.add(tip); add(ant, [.25,.62,.15], [1.5,2.8,.8], "antenna");
+  add(new THREE.Mesh(new THREE.BoxGeometry(.3,.12,.2), mat(0xffbe2e,{m:.3,r:.45})), [.15,-.28,0], [1.5,-2,-.5], "battery");
+  add(new THREE.Mesh(new THREE.SphereGeometry(.06,16,16), em(0xe040fb,0xe040fb,1)), [0,.52,.38], [-1.5,-1.8,-.5], "ledStatus");
+  const sg = new THREE.Group();
+  for (let i = 0; i < 3; i++) { const a = i / 3 * TAU; const s = new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.025,12), em(0x00e5ff,0x00e5ff,.6)); s.position.set(Math.cos(a)*.08,0,Math.sin(a)*.08); sg.add(s); }
+  sg.add(new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.015,24), mat(0x2a2a3e,{m:.4,r:.4})));
+  add(sg, [-.2,.48,.2], [-1.5,2.5,.8], "sensorArray");
+  const gg = new THREE.Group(); gg.add(gear(.14,12,.04,0xb0bec5)); const g2 = gear(.09,8,.04,0x90a4ae); g2.position.x = .2; gg.add(g2); gg.rotation.x = Math.PI/2; add(gg, [0,-.15,.3], [-.5,-2.5,-1], "gears");
+}
+
 function buildEffects() {
-  buildParticles();
-  buildEnergyRings();
-  buildHologramWireframe();
-}
-
-/* ── Floating Particles ── */
-function buildParticles() {
-  const count = 180;
   const geo = new THREE.BufferGeometry();
-  const positions = new Float32Array(count * 3);
-  const speeds = [];
-
-  for (let i = 0; i < count; i++) {
-    positions[i * 3]     = (Math.random() - 0.5) * 4;
-    positions[i * 3 + 1] = (Math.random() - 0.5) * 4;
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 4;
-    speeds.push(Math.random() * 0.5 + 0.2);
-  }
-
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geo.userData = { speeds };
-
-  const spriteTex = generateGlowTexture();
-
-  particles = new THREE.Points(geo, new THREE.PointsMaterial({
-    size: 0.04,
-    map: spriteTex,
-    transparent: true,
-    opacity: 0.6,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    color: 0x00d4ff,
-  }));
+  const arr = new Float32Array(450);
+  for (let i = 0; i < arr.length; i++) arr[i] = (Math.random() - .5) * 4;
+  geo.setAttribute("position", new THREE.BufferAttribute(arr, 3));
+  particles = new THREE.Points(geo, new THREE.PointsMaterial({ size:.035, transparent:true, opacity:.5, color:0x00d4ff, blending:THREE.AdditiveBlending, depthWrite:false }));
   scene.add(particles);
+  [0x00d4ff,0x00ff88,0xe040fb].forEach((c,i) => { const r = new THREE.Mesh(new THREE.TorusGeometry(.7+i*.15,.005,8,64), new THREE.MeshBasicMaterial({ color:c, transparent:true, opacity:.25, blending:THREE.AdditiveBlending })); r.userData = { speed:.3+i*.12 }; rings.push(r); scene.add(r); });
+  wire = new THREE.Mesh(new THREE.IcosahedronGeometry(.75,1), new THREE.MeshBasicMaterial({ color:0x00d4ff, wireframe:true, transparent:true, opacity:.08, blending:THREE.AdditiveBlending }));
+  scene.add(wire);
 }
 
-function generateGlowTexture() {
-  const size = 64;
-  const c = document.createElement('canvas');
-  c.width = c.height = size;
-  const ctx = c.getContext('2d');
-  const grad = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size/2);
-  grad.addColorStop(0, 'rgba(255,255,255,1)');
-  grad.addColorStop(0.3, 'rgba(255,255,255,0.5)');
-  grad.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, size, size);
-  return new THREE.CanvasTexture(c);
-}
-
-/* ── Energy Rings ── */
-function buildEnergyRings() {
-  energyRings = [];
-  const ringColors = [0x00d4ff, 0x00ff88, 0xe040fb];
-
-  for (let i = 0; i < 3; i++) {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(0.7 + i * 0.15, 0.005, 8, 64),
-      new THREE.MeshBasicMaterial({
-        color: ringColors[i],
-        transparent: true,
-        opacity: 0.3,
-        blending: THREE.AdditiveBlending,
-      })
-    );
-    ring.userData = { baseRadius: 0.7 + i * 0.15, speed: 0.3 + i * 0.15, axis: i };
-    scene.add(ring);
-    energyRings.push(ring);
+function selectPart(i, force = false) {
+  selected = i;
+  document.querySelectorAll(".arlab-part").forEach((e, idx) => e.classList.toggle("active", idx === i));
+  if (i >= 0 && parts[i]) {
+    const d = partInfo[parts[i].label];
+    setText(ui.title, d[0]); setText(ui.role, d[1]); setText(ui.status, d[2]); setText(ui.text, d[3]);
+    if (force) targetExplode = Math.max(targetExplode, .85);
+  } else {
+    setText(ui.title, "MicroBot Assembly"); setText(ui.role, "Full digital twin view"); setText(ui.status, "Local interactive demo");
+    setText(ui.text, "Start the AR Lab or activate Demo Mode. When a component is selected, this panel explains its role inside the MicroBot architecture.");
   }
+  status();
 }
 
-/* ── Holographic wireframe overlay ── */
-function buildHologramWireframe() {
-  hologramWire = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(0.75, 1),
-    new THREE.MeshBasicMaterial({
-      color: 0x00d4ff,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.08,
-      blending: THREE.AdditiveBlending,
-    })
-  );
-  scene.add(hologramWire);
-}
-
-/* ── Connection Lines (visible when exploded) ── */
-function updateConnectionLines(t) {
-  connectionLines.forEach(l => scene.remove(l));
-  connectionLines = [];
-  if (t < 0.15) return;
-
-  const lineMat = new THREE.LineBasicMaterial({
-    color: 0x00d4ff,
-    transparent: true,
-    opacity: Math.min(t * 1.5, 0.35),
-    blending: THREE.AdditiveBlending,
-  });
-
-  const connections = [
-    [0, 1], [0, 2],     // shell → dome, bottom
-    [3, 4],              // coils
-    [5, 6], [5, 7],     // magnet → poles
-    [8, 9], [8, 10],    // pcb → chip, antenna
-    [11, 8], [12, 8],   // battery, led → pcb
-    [13, 8],             // sensors → pcb
-  ];
-
-  connections.forEach(([a, b]) => {
-    if (a >= PARTS.length || b >= PARTS.length) return;
-    const geo = new THREE.BufferGeometry().setFromPoints([
-      PARTS[a].mesh.position.clone(),
-      PARTS[b].mesh.position.clone(),
-    ]);
-    const line = new THREE.Line(geo, lineMat);
-    scene.add(line);
-    connectionLines.push(line);
-  });
-}
-
-/* ═══════════════════════════════════════════════════════════
-   ANIMATE EFFECTS
-═══════════════════════════════════════════════════════════ */
-function animateEffects(elapsed, dt) {
-  /* Particles: orbit + float */
-  if (particles) {
-    const pos = particles.geometry.attributes.position;
-    const speeds = particles.geometry.userData.speeds;
-    for (let i = 0; i < pos.count; i++) {
-      let x = pos.getX(i);
-      let y = pos.getY(i);
-      let z = pos.getZ(i);
-
-      const spd = speeds[i];
-      const dist = Math.sqrt(x * x + z * z);
-      const angle = Math.atan2(z, x) + dt * spd * 0.3;
-      x = Math.cos(angle) * dist;
-      z = Math.sin(angle) * dist;
-      y += Math.sin(elapsed * spd + i) * dt * 0.03;
-
-      if (Math.abs(y) > 2) y *= 0.99;
-      if (dist > 2.5) { x *= 0.99; z *= 0.99; }
-
-      pos.setXYZ(i, x, y, z);
-    }
-    pos.needsUpdate = true;
-
-    particles.material.opacity = 0.3 + Math.sin(elapsed * 2) * 0.15;
-    particles.material.color.setRGB(
-      lerp(0, 0.9, explodeT),
-      lerp(0.83, 0.3, explodeT),
-      lerp(1, 0.2, explodeT)
-    );
-  }
-
-  /* Energy Rings */
-  energyRings.forEach((ring, i) => {
-    const spd = ring.userData.speed;
-    ring.scale.setScalar(1 + explodeT * 1.5);
-
-    if (i === 0) ring.rotation.x = elapsed * spd;
-    else if (i === 1) ring.rotation.y = elapsed * spd;
-    else ring.rotation.z = elapsed * spd;
-
-    ring.material.opacity = 0.15 + Math.sin(elapsed * 3 + i * 2) * 0.1;
-
-    const targetR = ring.userData.baseRadius + explodeT * 0.8;
-    ring.geometry.dispose();
-    ring.geometry = new THREE.TorusGeometry(targetR, 0.005, 8, 64);
-  });
-
-  /* Hologram wireframe */
-  if (hologramWire) {
-    hologramWire.rotation.x = elapsed * 0.15;
-    hologramWire.rotation.y = elapsed * 0.1;
-    hologramWire.scale.setScalar(1 + Math.sin(elapsed * 1.5) * 0.05 + explodeT * 0.6);
-    hologramWire.material.opacity = 0.06 + explodeT * 0.08;
-  }
-
-  /* Connection lines */
-  updateConnectionLines(explodeT);
-
-  /* Pulsing emissive on parts */
-  PARTS.forEach((p, i) => {
-    const pulse = val => 0.4 + Math.sin(elapsed * 3 + i * 0.8) * val;
-    if (p.mesh.material && p.mesh.material.emissiveIntensity !== undefined) {
-      p.mesh.material.emissiveIntensity = pulse(0.3);
-    }
-    p.mesh.traverse(child => {
-      if (child.isMesh && child.material && child.material.emissiveIntensity !== undefined) {
-        child.material.emissiveIntensity = pulse(0.4);
-      }
-    });
-  });
-
-  /* Gear rotation */
-  const gearPart = PARTS.find(p => p.label === 'gears');
-  if (gearPart) {
-    if (gearPart.mesh.children[0]) gearPart.mesh.children[0].rotation.z += dt * 2;
-    if (gearPart.mesh.children[1]) gearPart.mesh.children[1].rotation.z -= dt * 3;
-  }
-
-  /* Antenna blink */
-  const antPart = PARTS.find(p => p.label === 'antenna');
-  if (antPart && antPart.mesh.children[0] && antPart.mesh.children[0].material) {
-    antPart.mesh.children[0].material.emissiveIntensity = Math.sin(elapsed * 8) > 0 ? 1.0 : 0.2;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   MEDIAPIPE HAND TRACKING
-═══════════════════════════════════════════════════════════ */
-async function initHandTracking() {
+async function initHands() {
   if (handLandmarker) return;
-  setUI("tracking", "Loading...");
-
-  const vision = await FilesetResolver.forVisionTasks(
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
-  );
-
-  handLandmarker = await HandLandmarker.createFromOptions(vision, {
-    baseOptions: {
-      modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
-    },
-    runningMode: "VIDEO",
-    numHands: 2,
-    minHandDetectionConfidence: 0.6,
-    minHandPresenceConfidence: 0.6,
-    minTrackingConfidence: 0.5,
-  });
-
-  setUI("tracking", "Ready");
+  setText(baseUI.tracking, "Loading...");
+  const v = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm");
+  handLandmarker = await HandLandmarker.createFromOptions(v, { baseOptions:{ modelAssetPath:"https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task" }, runningMode:"VIDEO", numHands:2, minHandDetectionConfidence:.6, minHandPresenceConfidence:.6, minTrackingConfidence:.5 });
 }
 
 async function initCamera() {
-  mediaStream = await navigator.mediaDevices.getUserMedia({
-    video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
-    audio: false
-  });
-  video.srcObject = mediaStream;
+  stream = await navigator.mediaDevices.getUserMedia({ video:{ width:{ideal:1280}, height:{ideal:720}, facingMode:"user" }, audio:false });
+  video.srcObject = stream;
   await video.play();
-  setUI("camera", "ON");
 }
 
-/* ═══════════════════════════════════════════════════════════
-   GESTURE DETECTION
-═══════════════════════════════════════════════════════════ */
-function pinchDist(lm) {
-  const t = lm[4], i = lm[8];
-  return Math.hypot(t.x - i.x, t.y - i.y, (t.z || 0) - (i.z || 0));
-}
+function pinchDistance(lm) { const a = lm[4], b = lm[8]; return Math.hypot(a.x-b.x, a.y-b.y, (a.z||0)-(b.z||0)); }
+function pinchState(prev, d) { return prev ? d < PINCH_OFF : d < PINCH_ON; }
+function palm(lm) { const p = [lm[0], lm[5], lm[17]]; return { x:p.reduce((s,v)=>s+v.x,0)/3, y:p.reduce((s,v)=>s+v.y,0)/3 }; }
+function span(a,b) { const x = palm(a), y = palm(b); return Math.hypot(x.x-y.x, x.y-y.y); }
 
-function palmCenter(lm) {
-  const pts = [lm[0], lm[5], lm[17]];
-  return {
-    x: pts.reduce((s, p) => s + p.x, 0) / 3,
-    y: pts.reduce((s, p) => s + p.y, 0) / 3,
-    z: pts.reduce((s, p) => s + (p.z || 0), 0) / 3,
-  };
-}
-
-function handSpan(leftLm, rightLm) {
-  const lc = palmCenter(leftLm), rc = palmCenter(rightLm);
-  return Math.hypot(lc.x - rc.x, lc.y - rc.y);
-}
-
-function processHands(result) {
-  hands.count = result.landmarks?.length || 0;
+function processHands(res) {
+  hands.count = res.landmarks?.length || 0;
   hands.left = hands.right = null;
-  pinch.left = pinch.right = false;
-
-  if (!result.landmarks) return;
-
-  for (let i = 0; i < result.landmarks.length; i++) {
-    const lm = result.landmarks[i];
-    const side = result.handedness?.[i]?.[0]?.categoryName?.toUpperCase();
-    const isPinch = pinchDist(lm) < 0.07;
-
-    if (side === "LEFT") { hands.right = lm; pinch.right = isPinch; }
-    else { hands.left = lm; pinch.left = isPinch; }
-  }
-
-  updateUI(ui.hands, `${hands.count} HAND${hands.count !== 1 ? "S" : ""}`);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   INTERACTION LOGIC
-═══════════════════════════════════════════════════════════ */
-function updateInteraction() {
-  const bothPinch = pinch.left && pinch.right && hands.left && hands.right;
-  const onePinch  = (pinch.left && hands.left) || (pinch.right && hands.right);
-
-  if (bothPinch) {
-    const span = handSpan(hands.left, hands.right);
-    targetExplode = clamp(span / 0.45, 0, 1);
-    setUI("gesture", "EXPLODE");
-    setUI("modeText", "Scomposto");
-    updateUI(ui.mode, "EXPLODE");
-    return;
-  }
-
-  if (onePinch) {
-    const activeLm = pinch.left ? hands.left : hands.right;
-    const tip = activeLm[8];
-    const nx = (1 - tip.x) * 2 - 1;
-    const ny = -(tip.y * 2 - 1);
-    const targetX = nx * 3;
-    const targetY = ny * 2.2;
-
-    if (explodeT > 0.3) {
-      let nearest = -1, minD = Infinity;
-      PARTS.forEach((p, i) => {
-        const d = Math.hypot(p.mesh.position.x - targetX, p.mesh.position.y - targetY);
-        if (d < minD) { minD = d; nearest = i; }
-      });
-      if (nearest >= 0 && minD < 2) {
-        PARTS[nearest].mesh.position.x = lerp(PARTS[nearest].mesh.position.x, targetX, 0.15);
-        PARTS[nearest].mesh.position.y = lerp(PARTS[nearest].mesh.position.y, targetY, 0.15);
-        highlightPart(nearest);
-      }
-    } else {
-      PARTS.forEach(p => {
-        p.mesh.position.x = lerp(p.mesh.position.x, p.homePos.x + targetX, 0.12);
-        p.mesh.position.y = lerp(p.mesh.position.y, p.homePos.y + targetY, 0.12);
-      });
-    }
-
-    setUI("gesture", "GRAB");
-    updateUI(ui.mode, "GRAB");
-    return;
-  }
-
-  targetExplode = Math.max(targetExplode - 0.008, 0);
-  setUI("gesture", hands.count > 0 ? "OPEN" : "—");
-  setUI("modeText", explodeT > 0.1 ? "Scomposto" : "Assemblato");
-  updateUI(ui.mode, hands.count > 0 ? "TRACKING" : "IDLE");
-}
-
-function highlightPart(index) {
-  document.querySelectorAll(".arlab-part").forEach((el, i) => el.classList.toggle("active", i === index));
-}
-
-/* ═══════════════════════════════════════════════════════════
-   RENDER LOOP
-═══════════════════════════════════════════════════════════ */
-function frame() {
-  if (!running) return;
-  animId = requestAnimationFrame(frame);
-
-  const now = performance.now();
-  updateUI(ui.fps, `${Math.round(1000 / Math.max(1, now - lastTime))} FPS`);
-  lastTime = now;
-
-  const dt = clock.getDelta();
-  const elapsed = clock.getElapsedTime();
-
-  if (handLandmarker && video.readyState >= 2) {
-    processHands(handLandmarker.detectForVideo(video, now));
-  }
-
-  updateInteraction();
-  explodeT = lerp(explodeT, targetExplode, 0.06);
-
-  PARTS.forEach(p => {
-    if (pinch.left || pinch.right) return;
-    const target = new THREE.Vector3().lerpVectors(p.homePos, p.explodedPos, explodeT);
-    p.mesh.position.lerp(target, 0.06);
+  let lp = false, rp = false;
+  (res.landmarks || []).forEach((lm, i) => {
+    const side = res.handedness?.[i]?.[0]?.categoryName?.toUpperCase();
+    const d = pinchDistance(lm);
+    if (side === "LEFT") { hands.right = lm; rp = pinchState(pinch.right, d); }
+    else { hands.left = lm; lp = pinchState(pinch.left, d); }
   });
-
-  const rotSpeed = (1 - explodeT) * 0.003 + 0.001;
-  PARTS.forEach(p => p.mesh.rotation.y += rotSpeed);
-
-  animateEffects(elapsed, dt);
-  renderer.render(scene, camera3d);
+  pinch.left = lp; pinch.right = rp;
+  setText(baseUI.hands, `${hands.count} HAND${hands.count !== 1 ? "S" : ""}`);
 }
 
-/* ═══════════════════════════════════════════════════════════
-   CONTROLS
-═══════════════════════════════════════════════════════════ */
+function ghostAt(lm, grab = false) {
+  if (!ui.ghost || !viewport || !lm) { ui.ghost?.classList.remove("active", "grab"); return; }
+  const r = viewport.getBoundingClientRect();
+  const t = lm[8];
+  ui.ghost.style.left = `${(1-t.x)*r.width}px`;
+  ui.ghost.style.top = `${t.y*r.height}px`;
+  ui.ghost.classList.add("active");
+  ui.ghost.classList.toggle("grab", grab);
+}
+
+function nearest(x, y) {
+  let id = -1, m = 1e9;
+  parts.forEach((p, i) => { const d = Math.hypot(p.mesh.position.x-x, p.mesh.position.y-y); if (d < m) { m = d; id = i; } });
+  return { id, m };
+}
+
+function interact() {
+  if (demo) return;
+  const both = pinch.left && pinch.right && hands.left && hands.right;
+  const one = (pinch.left && hands.left) || (pinch.right && hands.right);
+  if (both) {
+    targetExplode = clamp(span(hands.left, hands.right) / .45, 0, 1);
+    gesture = "EXPLODE"; setText(baseUI.gesture, "EXPLODE"); setText(baseUI.modeText, "Scomposto"); setText(baseUI.mode, "EXPLODE");
+    hud("Two-Hand Explode", "Allontana o avvicina le mani per controllare la scomposizione del MicroBot.", targetExplode);
+    ghostAt(hands.left, true); return;
+  }
+  if (one) {
+    const lm = pinch.left ? hands.left : hands.right;
+    const t = lm[8]; const x = ((1-t.x)*2-1)*3; const y = -(t.y*2-1)*2.2;
+    if (explode > .3) { const n = nearest(x, y); if (n.id >= 0 && n.m < 2) { parts[n.id].mesh.position.x = lerp(parts[n.id].mesh.position.x, x, .15); parts[n.id].mesh.position.y = lerp(parts[n.id].mesh.position.y, y, .15); selectPart(n.id); } }
+    else parts.forEach(p => { p.mesh.position.x = lerp(p.mesh.position.x, p.home.x + x, .12); p.mesh.position.y = lerp(p.mesh.position.y, p.home.y + y, .12); });
+    gesture = "GRAB"; setText(baseUI.gesture, "GRAB"); setText(baseUI.mode, "GRAB");
+    hud("One-Hand Grab", "Stai controllando il modello con indice e pollice. In modalità esplosa puoi selezionare un componente.", explode);
+    ghostAt(lm, true); return;
+  }
+  targetExplode = Math.max(0, targetExplode - .008);
+  gesture = hands.count ? "OPEN" : "IDLE";
+  setText(baseUI.gesture, hands.count ? "OPEN" : "—"); setText(baseUI.modeText, explode > .1 ? "Scomposto" : "Assemblato"); setText(baseUI.mode, hands.count ? "TRACKING" : "IDLE");
+  ghostAt(hands.left || hands.right, false);
+  hud(hands.count ? "Tracking Active" : "Waiting for Hands", hands.count ? "Pizzica indice e pollice per afferrare. Usa due mani per scomporre il MicroBot." : "Mostra una mano alla camera oppure usa DEMO MODE.", explode);
+}
+
+function demoStep(t) {
+  if (!demo) return;
+  targetExplode = .25 + (Math.sin(t*.55)+1) * .375;
+  gesture = "DEMO TOUR";
+  const i = Math.floor((t*.55) % parts.length);
+  if (i !== selected) selectPart(i);
+  setText(baseUI.mode, "DEMO"); setText(baseUI.gesture, "DEMO TOUR"); setText(baseUI.modeText, targetExplode > .6 ? "Scomposto" : "Ispezione");
+  hud("Demo Mode", "Tour automatico del modello: il MicroBot viene scomposto e i componenti vengono spiegati senza webcam.", targetExplode);
+  ghostAt(null);
+}
+
+function animate() {
+  if (!running && !demo) return;
+  raf = requestAnimationFrame(animate);
+  const now = performance.now(); setText(baseUI.fps, `${Math.round(1000/Math.max(1, now-last))} FPS`); last = now;
+  const dt = clock.getDelta(), t = clock.getElapsedTime();
+  if (running && !demo && handLandmarker && video.readyState >= 2) processHands(handLandmarker.detectForVideo(video, now));
+  demoStep(t); interact(); explode = lerp(explode, targetExplode, .06);
+  parts.forEach((p, i) => { if (!demo && (pinch.left || pinch.right)) return; const v = new THREE.Vector3().lerpVectors(p.home, p.exploded, explode); p.mesh.position.lerp(v, .06); p.mesh.rotation.y += demo ? .006 : (1-explode)*.003+.001; if (i === selected) p.mesh.rotation.x += .003; });
+  if (particles) particles.rotation.y += dt*.08;
+  rings.forEach((r, i) => { r.rotation[["x","y","z"][i]] = t*r.userData.speed; r.scale.setScalar(1+explode*.8); });
+  if (wire) { wire.rotation.x = t*.15; wire.rotation.y = t*.1; wire.scale.setScalar(1+explode*.55); wire.material.opacity = .06+explode*.08; }
+  const gearPart = parts.find(p => p.label === "gears"); if (gearPart) { gearPart.mesh.children[0].rotation.z += dt*2; if (gearPart.mesh.children[1]) gearPart.mesh.children[1].rotation.z -= dt*3; }
+  status(); renderer.render(scene, camera3d);
+}
+
 async function start() {
   if (running) return;
   try {
-    instructions.classList.add("hidden");
-    setUI("tracking", "Loading...");
-    await initHandTracking();
-    await initCamera();
-    if (!renderer) initThree();
-    resizeRenderer();
-    running = true;
-    setUI("camera", "ON");
-    setUI("tracking", "ACTIVE");
-    frame();
-  } catch (err) {
-    console.error("AR Lab error:", err);
-    setUI("camera", "ERROR");
-    setUI("tracking", "ERROR");
-    instructions.classList.remove("hidden");
+    stopDemo(false); instructions?.classList.add("hidden"); if (!renderer) initThree(); await initHands(); await initCamera(); running = true;
+    setText(baseUI.camera, "ON"); setText(baseUI.tracking, "ACTIVE"); gesture = "WAITING";
+    hud("Camera Active", "Mostra una mano alla camera. Pizzica per afferrare, usa due mani per scomporre.", explode); resize(); animate();
+  } catch (e) {
+    console.error(e); setText(baseUI.camera, "ERROR"); setText(baseUI.tracking, "ERROR"); gesture = "ERROR";
+    hud("Camera Error", "La camera non è disponibile. Usa DEMO MODE per esplorare comunque il modello.", explode); instructions?.classList.remove("hidden");
   }
 }
 
 function stop() {
   running = false;
-  if (animId) { cancelAnimationFrame(animId); animId = null; }
-  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
-  video.srcObject = null;
-  setUI("camera", "OFF");
-  setUI("tracking", "OFF");
-  setUI("gesture", "—");
-  updateUI(ui.mode, "IDLE");
-  updateUI(ui.hands, "0 HANDS");
-  instructions.classList.remove("hidden");
+  if (raf && !demo) { cancelAnimationFrame(raf); raf = null; }
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  video.srcObject = null; hands.count = 0; hands.left = hands.right = null; pinch.left = pinch.right = false;
+  setText(baseUI.camera, "OFF"); setText(baseUI.tracking, "OFF"); setText(baseUI.gesture, "—"); setText(baseUI.mode, demo ? "DEMO" : "IDLE"); setText(baseUI.hands, "0 HANDS");
+  if (!demo) instructions?.classList.remove("hidden"); gesture = "IDLE"; status();
 }
 
-function reset() {
-  explodeT = 0;
-  targetExplode = 0;
-  PARTS.forEach(p => p.mesh.position.copy(p.homePos));
-  setUI("modeText", "Assemblato");
-  document.querySelectorAll(".arlab-part").forEach(el => el.classList.remove("active"));
-}
+function reset() { targetExplode = explode = 0; parts.forEach(p => p.mesh.position.copy(p.home)); selectPart(-1); setText(baseUI.modeText, "Assemblato"); hud("Reset Complete", "Il modello è tornato assemblato. Puoi riattivare DEMO MODE o usare la camera.", 0); }
+function startDemo() { if (!renderer) initThree(); stop(); demo = true; instructions?.classList.add("hidden"); ui.demoBtn?.classList.add("active"); setText(baseUI.camera,"DEMO"); setText(baseUI.tracking,"DEMO"); setText(baseUI.hands,"0 HANDS"); gesture = "DEMO TOUR"; resize(); animate(); }
+function stopDemo(resetUI = true) { demo = false; ui.demoBtn?.classList.remove("active"); if (resetUI) { setText(baseUI.camera, stream ? "ON" : "OFF"); setText(baseUI.tracking, running ? "ACTIVE" : "OFF"); gesture = "IDLE"; } }
+function toggleDemo() { if (demo) { stopDemo(true); reset(); if (raf && !running) { cancelAnimationFrame(raf); raf = null; } instructions?.classList.remove("hidden"); } else startDemo(); }
 
-function setUI(key, text) { if (ui[key]) ui[key].textContent = text; }
-function updateUI(el, text) { if (el) el.textContent = text; }
-
-if (startBtn) startBtn.addEventListener("click", start);
-if (stopBtn)  stopBtn.addEventListener("click", stop);
-if (resetBtn) resetBtn.addEventListener("click", reset);
-window.addEventListener("resize", () => { if (renderer) resizeRenderer(); });
+buildUpgradeUI(); hud("Interaction Guide", "Premi START AR per usare la camera oppure DEMO MODE per vedere la scomposizione senza webcam.", 0); status();
+startBtn?.addEventListener("click", start); stopBtn?.addEventListener("click", stop); resetBtn?.addEventListener("click", reset); ui.demoBtn?.addEventListener("click", toggleDemo); window.addEventListener("resize", resize);
