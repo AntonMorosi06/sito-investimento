@@ -316,10 +316,26 @@
         <div class="dashboard-main">
             <div class="dashboard-canvas-wrap reveal stagger-2">
                 <canvas class="dashboard-canvas" id="dashboardCanvas"></canvas>
-                <div class="dashboard-canvas-overlay">
-                    <span class="dashboard-canvas-chip live">LIVE</span>
-                    <span class="dashboard-canvas-chip">24 BOT</span>
-                    <span class="dashboard-canvas-chip">TRACKING ACTIVE</span>
+                <div class="dashboard-canvas-overlay dashboard-canvas-overlay-upgraded">
+                    <span class="dashboard-canvas-chip live">Simulated Telemetry</span>
+                    <span class="dashboard-canvas-chip">24 Nodes</span>
+                    <span class="dashboard-canvas-chip">Mesh Link Active</span>
+                    <span class="dashboard-canvas-chip warning">Hardware Pending</span>
+                </div>
+
+                <div class="dashboard-map-legend" aria-label="Swarm map legend">
+                    <div>
+                        <span class="legend-dot leader"></span>
+                        <strong>Leader Nodes</strong>
+                    </div>
+                    <div>
+                        <span class="legend-dot standard"></span>
+                        <strong>Standard Nodes</strong>
+                    </div>
+                    <div>
+                        <span class="legend-line"></span>
+                        <strong>Mesh Links</strong>
+                    </div>
                 </div>
             </div>
 

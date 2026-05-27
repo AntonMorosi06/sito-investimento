@@ -340,109 +340,182 @@
         resizeCanvas(canvas);
 
         const ctx = canvas.getContext("2d");
-        const w = canvas.width, h = canvas.height;
-        const cx = w / 2, cy = h / 2;
+        const w = canvas.width;
+        const h = canvas.height;
+        const cx = w / 2;
+        const cy = h / 2;
+        const base = Math.min(w, h);
+        const time = state.time;
 
         ctx.clearRect(0, 0, w, h);
 
-        /* grid */
-        ctx.strokeStyle = C.grid;
+        /* dark radial background */
+        const bg = ctx.createRadialGradient(cx, cy, base * 0.05, cx, cy, base * 0.74);
+        bg.addColorStop(0, "rgba(0,212,255,0.055)");
+        bg.addColorStop(0.42, "rgba(0,0,0,0.10)");
+        bg.addColorStop(1, "rgba(0,0,0,0.32)");
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, w, h);
+
+        /* technical grid */
+        const step = Math.max(34, Math.floor(base / 9));
         ctx.lineWidth = 1;
-        const step = Math.max(30, Math.floor(w / 18));
         for (let x = 0; x < w; x += step) {
-            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, h);
+            ctx.strokeStyle = x % (step * 3) === 0 ? "rgba(0,212,255,0.075)" : C.grid;
+            ctx.stroke();
         }
         for (let y = 0; y < h; y += step) {
-            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-        }
-
-        /* orbital rings */
-        for (let i = 0; i < 4; i++) {
             ctx.beginPath();
-            ctx.arc(cx, cy, 50 + i * 35, 0, Math.PI * 2);
-            ctx.strokeStyle = `rgba(0,212,255,${0.08 - i * 0.012})`;
-            ctx.lineWidth = 1;
+            ctx.moveTo(0, y);
+            ctx.lineTo(w, y);
+            ctx.strokeStyle = y % (step * 3) === 0 ? "rgba(0,212,255,0.075)" : C.grid;
             ctx.stroke();
         }
 
-        /* links */
+        /* central axes */
+        ctx.beginPath();
+        ctx.moveTo(cx, 0);
+        ctx.lineTo(cx, h);
+        ctx.moveTo(0, cy);
+        ctx.lineTo(w, cy);
+        ctx.strokeStyle = "rgba(0,212,255,0.07)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        /* orbital zones */
+        const rings = [0.18, 0.29, 0.40, 0.51];
+        rings.forEach((factor, i) => {
+            ctx.beginPath();
+            ctx.arc(cx, cy, base * factor, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(0,212,255,${0.11 - i * 0.018})`;
+            ctx.lineWidth = i === 0 ? 1.6 : 1;
+            ctx.stroke();
+        });
+
+        /* compute bot positions first, scaled to fill the panel better */
         state.bots.forEach((bot, i) => {
-            const a = bot.angle + state.time * bot.speed * 20;
-            const r = bot.radius + Math.sin(state.time + bot.pulse) * 8 + bot.orbitOffset * 0.15;
+            const a = bot.angle + time * bot.speed * 26 + Math.sin(time * 0.18 + i) * 0.025;
+            const normalizedRadius = 0.18 + ((bot.radius - 70) / 80) * 0.26;
+            const r = base * normalizedRadius + Math.sin(time + bot.pulse) * base * 0.018 + bot.orbitOffset * 0.35;
             bot.x = cx + Math.cos(a) * r;
             bot.y = cy + Math.sin(a) * r;
+        });
 
-            /* radial link to center */
+        /* mesh links between nearby nodes */
+        for (let i = 0; i < state.bots.length; i++) {
+            for (let j = i + 1; j < state.bots.length; j++) {
+                const a = state.bots[i];
+                const b = state.bots[j];
+                const d = Math.hypot(a.x - b.x, a.y - b.y);
+                const maxD = base * 0.26;
+                if (d < maxD) {
+                    const strength = 1 - d / maxD;
+                    ctx.beginPath();
+                    ctx.moveTo(a.x, a.y);
+                    ctx.lineTo(b.x, b.y);
+                    ctx.strokeStyle = `rgba(0,212,255,${0.035 + strength * 0.12})`;
+                    ctx.lineWidth = 0.75 + strength * 1.1;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        /* radial controller links and animated packets */
+        state.bots.forEach((bot, i) => {
+            const leader = i % 8 === 0;
             ctx.beginPath();
             ctx.moveTo(cx, cy);
             ctx.lineTo(bot.x, bot.y);
-            ctx.strokeStyle = C.link;
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = leader ? "rgba(0,255,136,0.16)" : "rgba(0,212,255,0.085)";
+            ctx.lineWidth = leader ? 1.35 : 0.8;
             ctx.stroke();
 
-            /* peer link */
-            const next = state.bots[(i + 1) % state.bots.length];
-            if (next.x !== undefined) {
+            if (i % 3 === 0) {
+                const phase = (time * (0.35 + (i % 5) * 0.05) + i * 0.13) % 1;
+                const px = cx + (bot.x - cx) * phase;
+                const py = cy + (bot.y - cy) * phase;
                 ctx.beginPath();
-                ctx.moveTo(bot.x, bot.y);
-                ctx.lineTo(next.x, next.y);
-                ctx.strokeStyle = C.cyanFaint;
-                ctx.lineWidth = 1;
-                ctx.stroke();
+                ctx.arc(px, py, leader ? 3.6 : 2.6, 0, Math.PI * 2);
+                ctx.fillStyle = leader ? C.green : C.cyan;
+                ctx.shadowBlur = leader ? 14 : 10;
+                ctx.shadowColor = leader ? C.greenGlow : C.cyanGlow;
+                ctx.fill();
+                ctx.shadowBlur = 0;
             }
         });
 
+        /* controller field */
+        const pulse = (Math.sin(time * 2.4) + 1) * 0.5;
+        for (let i = 0; i < 3; i++) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, base * (0.055 + i * 0.042) + pulse * 5, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(0,212,255,${0.20 - i * 0.045})`;
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+        }
+
         /* central controller */
         ctx.beginPath();
-        ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+        ctx.arc(cx, cy, base * 0.018, 0, Math.PI * 2);
         ctx.fillStyle = C.cyan;
-        ctx.shadowBlur = 24;
+        ctx.shadowBlur = 26;
         ctx.shadowColor = C.cyanGlow;
         ctx.fill();
         ctx.shadowBlur = 0;
 
-        /* controller pulse ring */
         ctx.beginPath();
-        ctx.arc(cx, cy, 20 + Math.sin(state.time * 2.4) * 3, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(0,212,255,0.20)";
+        ctx.arc(cx, cy, base * 0.032, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(0,212,255,0.42)";
         ctx.lineWidth = 2;
         ctx.stroke();
 
         /* bots */
         state.bots.forEach((bot, idx) => {
-            const pulse = (Math.sin(state.time * 3 + bot.pulse) + 1) * 0.5;
-            const size = bot.size + pulse * 1.5;
+            const botPulse = (Math.sin(time * 3 + bot.pulse) + 1) * 0.5;
+            const leader = idx % 8 === 0;
+            const nodeSize = (leader ? base * 0.012 : base * 0.0085) + botPulse * base * 0.003;
+            const fill = leader ? C.green : C.cyan;
+            const glow = leader ? C.greenGlow : C.cyanGlow;
 
-            /* decide color: most are cyan, every 8th is green (leader) */
-            const isLeader = idx % 8 === 0;
-            const fill = isLeader ? C.green : C.cyan;
-            const glow = isLeader ? C.greenGlow : C.cyanGlow;
+            if (leader || idx % 5 === 0) {
+                ctx.beginPath();
+                ctx.arc(bot.x, bot.y, nodeSize + base * 0.012 + botPulse * 5, 0, Math.PI * 2);
+                ctx.strokeStyle = leader ? "rgba(0,255,136,0.22)" : "rgba(0,212,255,0.16)";
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
 
             ctx.beginPath();
-            ctx.arc(bot.x, bot.y, size, 0, Math.PI * 2);
+            ctx.arc(bot.x, bot.y, nodeSize, 0, Math.PI * 2);
             ctx.fillStyle = fill;
-            ctx.shadowBlur = 12;
+            ctx.shadowBlur = leader ? 18 : 12;
             ctx.shadowColor = glow;
             ctx.fill();
             ctx.shadowBlur = 0;
 
-            /* halo on every 6th */
-            if (idx % 6 === 0) {
-                ctx.beginPath();
-                ctx.arc(bot.x, bot.y, size + 5 + pulse * 3, 0, Math.PI * 2);
-                ctx.strokeStyle = isLeader ? "rgba(0,255,136,0.18)" : "rgba(0,212,255,0.15)";
-                ctx.lineWidth = 1;
-                ctx.stroke();
+            if (leader) {
+                ctx.fillStyle = "rgba(0,255,136,0.65)";
+                ctx.font = `${Math.max(10, base * 0.017)}px JetBrains Mono, monospace`;
+                ctx.textAlign = "center";
+                ctx.fillText(`L${Math.floor(idx / 8) + 1}`, bot.x, bot.y - nodeSize - 8);
             }
         });
 
-        /* labels */
+        /* corner telemetry labels */
         ctx.fillStyle = C.text;
-        ctx.font = `${Math.max(11, w * 0.014)}px JetBrains Mono, monospace`;
+        ctx.font = `${Math.max(11, base * 0.018)}px JetBrains Mono, monospace`;
         ctx.textAlign = "left";
         ctx.fillText("CENTRAL CONTROLLER", 18, 28);
-        ctx.fillText(`ACTIVE NODES: ${state.values.botCount}`, 18, 48);
-        ctx.fillText(`LATENCY: ${state.values.latency.toFixed(1)}ms`, 18, 68);
+        ctx.fillText(`ACTIVE NODES: ${state.values.botCount}`, 18, 50);
+        ctx.fillText(`SIMULATED LATENCY: ${state.values.latency.toFixed(1)}ms`, 18, 72);
+        ctx.fillText("MODE: PRE-HARDWARE MESH", 18, 94);
+
+        ctx.textAlign = "right";
+        ctx.fillText("PUBLIC DEMONSTRATOR", w - 18, 28);
+        ctx.fillText("HARDWARE PENDING", w - 18, 50);
     };
 
     /* ══════════════════════════════════════════════════════

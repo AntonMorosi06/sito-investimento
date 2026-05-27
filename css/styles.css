@@ -5052,3 +5052,106 @@ nav::after {
     }
 }
 
+
+/* =========================================================
+   DASHBOARD SWARM MAP UPGRADE v0.9
+   Richer central swarm visualization and simulated telemetry legend
+========================================================= */
+
+.dashboard-canvas-wrap {
+    overflow: hidden;
+}
+
+.dashboard-canvas-wrap::after {
+    content: "";
+    position: absolute;
+    inset: 1.5rem;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 50% 50%, transparent 0%, transparent 54%, rgba(0, 212, 255, 0.035) 100%);
+    border: 1px solid rgba(0, 212, 255, 0.045);
+}
+
+.dashboard-canvas-overlay-upgraded {
+    z-index: 3;
+    max-width: calc(100% - 4rem);
+}
+
+.dashboard-canvas-chip.warning {
+    color: #ffd27a;
+    border-color: rgba(255, 210, 122, 0.32);
+    background: rgba(255, 210, 122, 0.07);
+}
+
+.dashboard-map-legend {
+    position: absolute;
+    left: 2rem;
+    bottom: 2rem;
+    z-index: 3;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    max-width: calc(100% - 4rem);
+    padding: 0.62rem 0.72rem;
+    border: 1px solid rgba(0, 212, 255, 0.13);
+    background: rgba(0, 0, 0, 0.48);
+    backdrop-filter: blur(10px);
+}
+
+.dashboard-map-legend div {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+}
+
+.dashboard-map-legend strong {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.52rem;
+    color: var(--accent-gray);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.legend-dot.leader {
+    background: var(--accent-secondary);
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.45);
+}
+
+.legend-dot.standard {
+    background: var(--accent-primary);
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.45);
+}
+
+.legend-line {
+    width: 24px;
+    height: 1px;
+    display: inline-block;
+    background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.8), transparent);
+}
+
+@media (max-width: 760px) {
+    .dashboard-canvas-overlay-upgraded {
+        top: 1.4rem;
+        left: 1.4rem;
+        max-width: calc(100% - 2.8rem);
+    }
+
+    .dashboard-map-legend {
+        left: 1.4rem;
+        right: 1.4rem;
+        bottom: 1.4rem;
+        max-width: none;
+    }
+
+    .dashboard-map-legend strong {
+        font-size: 0.48rem;
+    }
+}
+
