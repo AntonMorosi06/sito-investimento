@@ -76,7 +76,7 @@
     const topstrip = document.createElement("div");
     topstrip.className = "app-shell-topstrip";
     topstrip.innerHTML = `
-      <button id="btnShellToggle" class="secondary">☰ Sections</button>
+      <button id="btnShellToggle" class="secondary">Sections</button>
       <span id="shellActiveLabel">Overview</span>
       <span class="shell-truth">PRE-HARDWARE / NOT HARDWARE-VALIDATED</span>
     `;
