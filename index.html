@@ -271,32 +271,44 @@
             </p>
         </div>
 
-        <div class="dashboard-grid">
+        <div class="dashboard-grid dashboard-grid-upgraded">
             <div class="dashboard-card card-success reveal stagger-1">
-                <div class="dashboard-label">Bot Attivi</div>
+                <div class="dashboard-card-topline">
+                    <div class="dashboard-label">Bot Attivi</div>
+                    <span class="dashboard-badge badge-simulated">Simulated</span>
+                </div>
                 <div class="dashboard-value" id="dashBotCount">24</div>
-                <div class="dashboard-change up">↑ 3 negli ultimi 5min</div>
+                <div class="dashboard-change stable">Simulated swarm nodes</div>
                 <canvas class="dashboard-chart" id="dashChart1"></canvas>
             </div>
 
             <div class="dashboard-card card-info reveal stagger-2">
-                <div class="dashboard-label">Frame Rate</div>
+                <div class="dashboard-card-topline">
+                    <div class="dashboard-label">Frame Rate</div>
+                    <span class="dashboard-badge badge-target">Target</span>
+                </div>
                 <div class="dashboard-value" id="dashFPS">120</div>
-                <div class="dashboard-change stable">— Stabile</div>
+                <div class="dashboard-change stable">Rendering target</div>
                 <canvas class="dashboard-chart" id="dashChart2"></canvas>
             </div>
 
             <div class="dashboard-card card-warning reveal stagger-3">
-                <div class="dashboard-label">Latenza Media</div>
+                <div class="dashboard-card-topline">
+                    <div class="dashboard-label">Latenza Media</div>
+                    <span class="dashboard-badge badge-target">Target</span>
+                </div>
                 <div class="dashboard-value" id="dashLatency">4.2<span style="font-size:1rem">ms</span></div>
-                <div class="dashboard-change up">↑ 0.3ms</div>
+                <div class="dashboard-change stable">Transport latency target</div>
                 <canvas class="dashboard-chart" id="dashChart3"></canvas>
             </div>
 
             <div class="dashboard-card card-success reveal stagger-4">
-                <div class="dashboard-label">Energia Totale</div>
+                <div class="dashboard-card-topline">
+                    <div class="dashboard-label">Energia Totale</div>
+                    <span class="dashboard-badge badge-estimate">Estimate</span>
+                </div>
                 <div class="dashboard-value" id="dashEnergy">87<span style="font-size:1rem">%</span></div>
-                <div class="dashboard-change down">↓ 2% / ora</div>
+                <div class="dashboard-change stable">Simulated energy model</div>
                 <canvas class="dashboard-chart" id="dashChart4"></canvas>
             </div>
         </div>

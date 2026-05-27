@@ -4917,3 +4917,138 @@ nav::after {
     }
 }
 
+
+/* =========================================================
+   DASHBOARD TOP CARDS UPGRADE v0.8
+   Clear simulated/target/estimate labels for public demonstrator telemetry
+========================================================= */
+
+.dashboard-grid-upgraded {
+    align-items: stretch;
+}
+
+.dashboard-grid-upgraded .dashboard-card {
+    min-height: 158px;
+    padding: 1.45rem 1.55rem;
+    border-color: rgba(255, 255, 255, 0.085);
+    background:
+        linear-gradient(135deg, rgba(0, 212, 255, 0.055), rgba(0, 0, 0, 0.16)),
+        var(--bg-panel);
+    box-shadow: 0 18px 54px rgba(0, 0, 0, 0.22);
+    transition:
+        transform 0.3s ease,
+        border-color 0.3s ease,
+        background 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.dashboard-grid-upgraded .dashboard-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(0, 212, 255, 0.28);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+}
+
+.dashboard-card-topline {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.8rem;
+    margin-bottom: 0.72rem;
+}
+
+.dashboard-badge {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.26rem 0.48rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.26);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.48rem;
+    line-height: 1;
+    letter-spacing: 1.35px;
+    text-transform: uppercase;
+}
+
+.badge-simulated {
+    color: var(--accent-secondary);
+    border-color: rgba(0, 255, 136, 0.34);
+    background: rgba(0, 255, 136, 0.055);
+}
+
+.badge-target {
+    color: var(--accent-primary);
+    border-color: rgba(0, 212, 255, 0.34);
+    background: rgba(0, 212, 255, 0.055);
+}
+
+.badge-estimate {
+    color: #ffd27a;
+    border-color: rgba(255, 210, 122, 0.34);
+    background: rgba(255, 210, 122, 0.055);
+}
+
+.dashboard-grid-upgraded .dashboard-label {
+    margin-bottom: 0;
+    color: var(--accent-mid);
+}
+
+.dashboard-grid-upgraded .dashboard-value {
+    position: relative;
+    z-index: 2;
+    margin-bottom: 0.55rem;
+    text-shadow: 0 0 18px rgba(255, 255, 255, 0.035);
+}
+
+.dashboard-grid-upgraded .dashboard-change {
+    position: relative;
+    z-index: 2;
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+.dashboard-grid-upgraded .dashboard-change.up,
+.dashboard-grid-upgraded .dashboard-change.down,
+.dashboard-grid-upgraded .dashboard-change.stable {
+    color: var(--text-secondary);
+}
+
+.dashboard-grid-upgraded .dashboard-chart {
+    width: 150px;
+    height: 72px;
+    opacity: 0.5;
+    filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.12));
+}
+
+.dashboard-grid-upgraded .card-warning::before {
+    background: #ffd27a;
+}
+
+.dashboard-grid-upgraded .card-warning .dashboard-value {
+    color: var(--text-primary);
+}
+
+@media (max-width: 760px) {
+    .dashboard-grid-upgraded .dashboard-card {
+        min-height: 144px;
+        padding: 1.25rem;
+    }
+
+    .dashboard-card-topline {
+        gap: 0.65rem;
+    }
+
+    .dashboard-badge {
+        font-size: 0.45rem;
+        letter-spacing: 1px;
+    }
+
+    .dashboard-grid-upgraded .dashboard-chart {
+        width: 120px;
+        height: 60px;
+    }
+}
+
