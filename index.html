@@ -373,23 +373,69 @@
                 </div>
             </div>
 
-            <div class="dashboard-sidebar reveal stagger-3">
-                <div class="dashboard-gauge">
+            <div class="dashboard-sidebar dashboard-health-stack reveal stagger-3">
+                <div class="health-stack-header">
+                    <span>System Health Stack</span>
+                    <strong>Simulated</strong>
+                </div>
+
+                <div class="dashboard-gauge health-card health-card-temp">
+                    <div class="health-card-meta">
+                        <div>
+                            <span>Thermal</span>
+                            <strong>Temperature</strong>
+                        </div>
+                        <em>Target Range</em>
+                    </div>
                     <canvas class="gauge-canvas" id="gaugeTemp"></canvas>
                     <div class="gauge-label">Temperatura Media</div>
                     <div class="gauge-value" id="gaugeTempValue">32°C</div>
                 </div>
 
-                <div class="dashboard-gauge">
+                <div class="dashboard-gauge health-card health-card-cpu">
+                    <div class="health-card-meta">
+                        <div>
+                            <span>Controller</span>
+                            <strong>CPU Load</strong>
+                        </div>
+                        <em>Browser Load</em>
+                    </div>
                     <canvas class="gauge-canvas" id="gaugeCPU"></canvas>
                     <div class="gauge-label">CPU Controller</div>
                     <div class="gauge-value" id="gaugeCPUValue">45%</div>
                 </div>
 
-                <div class="dashboard-gauge">
+                <div class="dashboard-gauge health-card health-card-network">
+                    <div class="health-card-meta">
+                        <div>
+                            <span>Transport</span>
+                            <strong>Network Load</strong>
+                        </div>
+                        <em>Local Stream</em>
+                    </div>
                     <canvas class="gauge-canvas" id="gaugeNetwork"></canvas>
                     <div class="gauge-label">Network Load</div>
                     <div class="gauge-value" id="gaugeNetworkValue">23%</div>
+                </div>
+
+                <div class="dashboard-safety-card">
+                    <div class="safety-card-head">
+                        <span>Safety Layer</span>
+                        <strong>Planned</strong>
+                    </div>
+                    <div class="safety-card-row">
+                        <span>Watchdog</span>
+                        <strong>Planned</strong>
+                    </div>
+                    <div class="safety-card-row">
+                        <span>Emergency Stop</span>
+                        <strong>Pending</strong>
+                    </div>
+                    <div class="safety-card-row">
+                        <span>Hardware Validation</span>
+                        <strong>Required</strong>
+                    </div>
+                    <p>Safety states are documented for the public demo and must be validated on real ESP32 hardware.</p>
                 </div>
             </div>
         </div>

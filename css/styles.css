@@ -5304,3 +5304,224 @@ nav::after {
     }
 }
 
+
+/* =========================================================
+   DASHBOARD SYSTEM HEALTH STACK v1.1
+   Compact right-side health stack with safety layer disclosure
+========================================================= */
+
+.dashboard-health-stack {
+    gap: 0.85rem;
+}
+
+.health-stack-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.92rem 1rem;
+    border: 1px solid rgba(0, 212, 255, 0.16);
+    background:
+        linear-gradient(135deg, rgba(0, 212, 255, 0.075), rgba(0, 0, 0, 0.22)),
+        var(--bg-panel);
+}
+
+.health-stack-header span {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.56rem;
+    color: var(--accent-primary);
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+}
+
+.health-stack-header strong {
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.68rem;
+    color: #ffd27a;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.dashboard-health-stack .health-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(118px, 0.9fr) minmax(120px, 1fr);
+    align-items: center;
+    gap: 0.8rem;
+    padding: 1rem;
+    min-height: 142px;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 82% 18%, rgba(0, 212, 255, 0.08), transparent 34%),
+        var(--bg-panel);
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dashboard-health-stack .health-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(0, 212, 255, 0.24);
+    box-shadow: 0 18px 54px rgba(0, 0, 0, 0.28);
+}
+
+.health-card-meta {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    gap: 0.62rem;
+}
+
+.health-card-meta span {
+    display: block;
+    margin-bottom: 0.26rem;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.5rem;
+    color: var(--accent-mid);
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+}
+
+.health-card-meta strong {
+    display: block;
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.76rem;
+    color: var(--text-primary);
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+}
+
+.health-card-meta em {
+    justify-self: start;
+    padding: 0.25rem 0.45rem;
+    border: 1px solid rgba(0, 212, 255, 0.18);
+    background: rgba(0, 212, 255, 0.045);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.47rem;
+    color: var(--accent-gray);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    font-style: normal;
+}
+
+.dashboard-health-stack .gauge-canvas {
+    position: relative;
+    z-index: 2;
+    height: 104px;
+}
+
+.dashboard-health-stack .gauge-label {
+    grid-column: 1 / 2;
+    margin-top: -0.25rem;
+    font-size: 0.52rem;
+    color: var(--text-secondary);
+}
+
+.dashboard-health-stack .gauge-value {
+    grid-column: 2 / 3;
+    justify-self: end;
+    margin-top: -0.45rem;
+    font-size: 1.25rem;
+}
+
+.health-card-temp .gauge-value {
+    color: #ffd27a;
+}
+
+.health-card-cpu .gauge-value {
+    color: var(--accent-primary);
+}
+
+.health-card-network .gauge-value {
+    color: var(--accent-secondary);
+}
+
+.dashboard-safety-card {
+    padding: 1rem;
+    border: 1px solid rgba(255, 210, 122, 0.18);
+    background:
+        linear-gradient(145deg, rgba(255, 210, 122, 0.07), rgba(0, 0, 0, 0.22)),
+        var(--bg-panel);
+}
+
+.safety-card-head,
+.safety-card-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.safety-card-head {
+    padding-bottom: 0.72rem;
+    margin-bottom: 0.72rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+}
+
+.safety-card-head span,
+.safety-card-row span,
+.safety-card-head strong,
+.safety-card-row strong {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.52rem;
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+}
+
+.safety-card-head span,
+.safety-card-head strong {
+    color: #ffd27a;
+}
+
+.safety-card-row {
+    padding: 0.42rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.safety-card-row span {
+    color: var(--accent-mid);
+}
+
+.safety-card-row strong {
+    color: var(--text-primary);
+    text-align: right;
+}
+
+.safety-card-row:nth-child(3) strong,
+.safety-card-row:nth-child(4) strong {
+    color: #ffd27a;
+}
+
+.dashboard-safety-card p {
+    margin-top: 0.78rem;
+    font-size: 0.66rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 1180px) {
+    .dashboard-health-stack .health-card {
+        grid-template-columns: minmax(130px, 0.8fr) minmax(130px, 1fr);
+    }
+}
+
+@media (max-width: 760px) {
+    .dashboard-health-stack .health-card {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-health-stack .gauge-value,
+    .dashboard-health-stack .gauge-label {
+        grid-column: auto;
+        justify-self: start;
+        margin-top: 0;
+    }
+
+    .safety-card-head,
+    .safety-card-row {
+        flex-direction: column;
+        gap: 0.28rem;
+    }
+
+    .safety-card-row strong {
+        text-align: left;
+    }
+}
+
