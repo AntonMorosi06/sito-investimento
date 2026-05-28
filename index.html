@@ -439,6 +439,44 @@
                 </div>
             </div>
         </div>
+
+        <div class="dashboard-event-log reveal stagger-4" aria-label="Runtime event log">
+            <div class="event-log-header">
+                <div>
+                    <span>Runtime Event Log</span>
+                    <strong>Simulated Operational Trace</strong>
+                </div>
+                <em>Local Browser Session</em>
+            </div>
+
+            <div class="event-log-list">
+                <div class="event-log-row event-ok">
+                    <span class="event-time">21:12:34</span>
+                    <span class="event-tag">runtime</span>
+                    <p>Dashboard render loop initialized through requestAnimationFrame.</p>
+                </div>
+                <div class="event-log-row event-ok">
+                    <span class="event-time">21:12:35</span>
+                    <span class="event-tag">mesh</span>
+                    <p>Simulated swarm map generated with leader nodes, standard nodes and mesh links.</p>
+                </div>
+                <div class="event-log-row event-info">
+                    <span class="event-time">21:12:36</span>
+                    <span class="event-tag">telemetry</span>
+                    <p>Telemetry values are produced locally until real ESP32 serial validation is connected.</p>
+                </div>
+                <div class="event-log-row event-warn">
+                    <span class="event-time">21:12:37</span>
+                    <span class="event-tag">hardware</span>
+                    <p>Hardware validation pending: next milestone is real serial test with ESP32 controller.</p>
+                </div>
+                <div class="event-log-row event-warn">
+                    <span class="event-time">21:12:38</span>
+                    <span class="event-tag">safety</span>
+                    <p>Safety layer documented for public demo; watchdog and emergency stop require hardware validation.</p>
+                </div>
+            </div>
+        </div>
     </section>
 
     <section id="vision">

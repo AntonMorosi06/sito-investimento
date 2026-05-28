@@ -5525,3 +5525,156 @@ nav::after {
     }
 }
 
+
+/* =========================================================
+   DASHBOARD EVENT LOG v1.2
+   Static operational trace for the public dashboard demonstrator
+========================================================= */
+
+.dashboard-event-log {
+    width: min(100% - 40px, 1500px);
+    margin: 1.4rem auto 0;
+    padding: 1rem;
+    border: 1px solid rgba(0, 212, 255, 0.14);
+    background:
+        linear-gradient(135deg, rgba(0, 212, 255, 0.055), rgba(0, 0, 0, 0.18)),
+        var(--bg-panel);
+    box-shadow: 0 20px 64px rgba(0, 0, 0, 0.28);
+}
+
+.event-log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding-bottom: 0.9rem;
+    margin-bottom: 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+}
+
+.event-log-header span {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.56rem;
+    color: var(--accent-primary);
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+}
+
+.event-log-header strong {
+    display: block;
+    font-family: "Orbitron", sans-serif;
+    font-size: 0.78rem;
+    color: var(--text-primary);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+}
+
+.event-log-header em {
+    padding: 0.32rem 0.55rem;
+    border: 1px solid rgba(255, 210, 122, 0.28);
+    background: rgba(255, 210, 122, 0.055);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.52rem;
+    color: #ffd27a;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    font-style: normal;
+    white-space: nowrap;
+}
+
+.event-log-list {
+    display: grid;
+    gap: 0.52rem;
+}
+
+.event-log-row {
+    display: grid;
+    grid-template-columns: 86px 96px minmax(0, 1fr);
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.66rem 0.72rem;
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    background: rgba(0, 0, 0, 0.18);
+    transition:
+        transform 0.25s ease,
+        border-color 0.25s ease,
+        background 0.25s ease;
+}
+
+.event-log-row:hover {
+    transform: translateX(3px);
+    border-color: rgba(0, 212, 255, 0.18);
+    background: rgba(0, 212, 255, 0.045);
+}
+
+.event-time,
+.event-tag {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.55rem;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+}
+
+.event-time {
+    color: var(--accent-mid);
+}
+
+.event-tag {
+    justify-self: start;
+    padding: 0.25rem 0.42rem;
+    border: 1px solid rgba(0, 212, 255, 0.16);
+    color: var(--accent-primary);
+    background: rgba(0, 212, 255, 0.045);
+}
+
+.event-log-row p {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+}
+
+.event-ok .event-tag {
+    color: var(--accent-secondary);
+    border-color: rgba(0, 255, 136, 0.22);
+    background: rgba(0, 255, 136, 0.045);
+}
+
+.event-info .event-tag {
+    color: var(--accent-primary);
+}
+
+.event-warn .event-tag {
+    color: #ffd27a;
+    border-color: rgba(255, 210, 122, 0.24);
+    background: rgba(255, 210, 122, 0.055);
+}
+
+@media (max-width: 760px) {
+    .dashboard-event-log {
+        width: min(100% - 24px, 1500px);
+        padding: 0.85rem;
+    }
+
+    .event-log-header,
+    .event-log-row {
+        grid-template-columns: 1fr;
+    }
+
+    .event-log-header {
+        display: grid;
+    }
+
+    .event-log-header em {
+        justify-self: start;
+        white-space: normal;
+    }
+
+    .event-log-row {
+        align-items: start;
+        gap: 0.42rem;
+    }
+}
+
